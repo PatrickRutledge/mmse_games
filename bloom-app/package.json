@@ -1,0 +1,36 @@
+{
+  "name": "bloom-daily-games",
+  "version": "1.0.0",
+  "description": "Daily games for cognitive wellness",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win portable",
+    "build-installer": "electron-builder --win nsis"
+  },
+  "author": "Your Healthcare Practice",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^40.2.1",
+    "electron-builder": "^26.7.0"
+  },
+  "build": {
+    "appId": "com.healthcare.bloom",
+    "productName": "Bloom Daily Games",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "bloom.html"
+    ],
+    "win": {
+      "target": ["portable"],
+      "icon": null
+    },
+    "portable": {
+      "artifactName": "Bloom-Daily-Games.exe"
+    }
+  }
+}

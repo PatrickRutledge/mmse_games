@@ -1,0 +1,1696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Bloom — Brain Games</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Cormorant+Garamond:ital,wght@0,500;0,700;1,500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --coral: #E8736C;
+  --coral-soft: #F4ADA8;
+  --teal: #5BA nineteen9B;
+  --teal: #5B9B8A;
+  --teal-soft: #A8D5C8;
+  --honey: #E8B44D;
+  --honey-soft: #F5DCA0;
+  --plum: #7B5EA7;
+  --plum-soft: #C4B0E0;
+  --sky: #6AABE8;
+  --sky-soft: #A8D4F5;
+  --blush: #FFF5F3;
+  --cream: #FFFCF7;
+  --ink: #2D2438;
+  --ink-light: #6B5F7A;
+  --card-shadow: 0 4px 20px rgba(45,36,56,0.12);
+  --glow: 0 0 20px rgba(232,115,108,0.3);
+  --radius: 20px;
+  --radius-sm: 14px;
+  --radius-xs: 10px;
+  --safe-bottom: env(safe-area-inset-bottom, 16px);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+html, body {
+  font-family:'Nunito',sans-serif;
+  background: var(--cream);
+  color: var(--ink);
+  min-height:100vh;
+  min-height:100dvh;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* Prevent text selection during gameplay */
+.game-active { user-select:none; -webkit-user-select:none; }
+
+/* ===== APP SHELL ===== */
+.app {
+  max-width:430px;
+  margin:0 auto;
+  min-height:100vh;
+  min-height:100dvh;
+  position:relative;
+  background: var(--cream);
+}
+
+/* ===== AMBIENT BACKGROUND ===== */
+.ambient {
+  position:fixed; top:0;left:0;right:0;bottom:0;
+  pointer-events:none; z-index:0;
+  background:
+    radial-gradient(ellipse at 20% 10%, rgba(232,115,108,0.07) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 90%, rgba(91,155,138,0.07) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(232,180,77,0.04) 0%, transparent 60%);
+}
+
+/* ===== SCREENS ===== */
+.screen {
+  display:none;
+  position:relative;
+  z-index:1;
+  padding: 20px 16px;
+  padding-bottom: calc(20px + var(--safe-bottom));
+  animation: screenIn 0.4s ease-out;
+}
+.screen.active { display:block; }
+
+@keyframes screenIn {
+  from { opacity:0; transform:translateY(12px); }
+  to { opacity:1; transform:translateY(0); }
+}
+
+/* ===== HOME SCREEN ===== */
+.home-header {
+  text-align:center;
+  padding: 40px 0 24px;
+}
+
+.bloom-logo {
+  font-size: 56px;
+  display:block;
+  margin-bottom:4px;
+  animation: gentleFloat 4s ease-in-out infinite;
+}
+
+@keyframes gentleFloat {
+  0%,100% { transform:translateY(0) rotate(0deg); }
+  50% { transform:translateY(-8px) rotate(2deg); }
+}
+
+.home-header h1 {
+  font-family:'Cormorant Garamond',serif;
+  font-size:2.6rem;
+  font-weight:700;
+  color:var(--ink);
+  letter-spacing:1px;
+  line-height:1;
+}
+
+.home-header .tagline {
+  font-size:0.95rem;
+  color:var(--ink-light);
+  font-weight:600;
+  margin-top:4px;
+}
+
+.streak-banner {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  margin:16px 0;
+  padding:12px 20px;
+  background: linear-gradient(135deg, var(--honey-soft), #FFF0D0);
+  border-radius:50px;
+  font-weight:800;
+  font-size:0.9rem;
+  color:#8B6914;
+  border:2px solid var(--honey);
+}
+
+.streak-banner .streak-flame { font-size:1.3rem; }
+
+/* Game Cards on Home */
+.game-grid {
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  margin-top:8px;
+}
+
+.game-tile {
+  position:relative;
+  border-radius: var(--radius);
+  padding:22px 20px;
+  cursor:pointer;
+  border:none;
+  text-align:left;
+  font-family:'Nunito',sans-serif;
+  transition: transform 0.2s, box-shadow 0.2s;
+  overflow:hidden;
+  display:flex;
+  align-items:center;
+  gap:16px;
+  -webkit-appearance:none;
+}
+
+.game-tile:active { transform:scale(0.97); }
+
+.game-tile-icon {
+  font-size:2.4rem;
+  width:56px; height:56px;
+  display:flex; align-items:center; justify-content:center;
+  border-radius:16px;
+  flex-shrink:0;
+}
+
+.game-tile-info h3 {
+  font-size:1.1rem;
+  font-weight:800;
+  margin-bottom:2px;
+}
+
+.game-tile-info p {
+  font-size:0.82rem;
+  font-weight:600;
+  opacity:0.75;
+  line-height:1.3;
+}
+
+.game-tile.bubble {
+  background: linear-gradient(135deg, #FFF0EE, #FFE4E1);
+  color:#8B3A35;
+  box-shadow: 0 4px 16px rgba(232,115,108,0.15);
+}
+.game-tile.bubble .game-tile-icon { background:rgba(232,115,108,0.15); }
+
+.game-tile.cards {
+  background: linear-gradient(135deg, #EFF8F5, #E0F2EC);
+  color:#2D5E4E;
+  box-shadow: 0 4px 16px rgba(91,155,138,0.15);
+}
+.game-tile.cards .game-tile-icon { background:rgba(91,155,138,0.15); }
+
+.game-tile.mahjong {
+  background: linear-gradient(135deg, #F5F0FF, #EDE4FF);
+  color:#4A3570;
+  box-shadow: 0 4px 16px rgba(123,94,167,0.15);
+}
+.game-tile.mahjong .game-tile-icon { background:rgba(123,94,167,0.15); }
+
+.game-tile .badge {
+  position:absolute;
+  top:12px; right:12px;
+  font-size:0.7rem;
+  font-weight:800;
+  padding:3px 10px;
+  border-radius:20px;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+}
+
+.game-tile.bubble .badge { background:var(--coral); color:white; }
+.game-tile.cards .badge { background:var(--teal); color:white; }
+.game-tile.mahjong .badge { background:var(--plum); color:white; }
+
+/* ===== SHARED GAME UI ===== */
+.game-topbar {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:8px 0 16px;
+}
+
+.game-topbar-left {
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.back-btn {
+  width:40px; height:40px;
+  border-radius:12px;
+  border:2px solid rgba(45,36,56,0.1);
+  background:white;
+  font-size:1.2rem;
+  cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  transition: background 0.2s;
+}
+.back-btn:active { background:#f0f0f0; }
+
+.game-title-small {
+  font-weight:800;
+  font-size:1rem;
+}
+
+.score-pill {
+  display:flex;
+  align-items:center;
+  gap:6px;
+  background:white;
+  padding:8px 14px;
+  border-radius:50px;
+  font-weight:800;
+  font-size:0.95rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.score-pill .coin { font-size:1.1rem; }
+
+/* Level indicator */
+.level-bar {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:16px;
+}
+
+.level-label {
+  font-weight:800;
+  font-size:0.82rem;
+  color:var(--ink-light);
+  white-space:nowrap;
+}
+
+.level-track {
+  flex:1;
+  height:8px;
+  background:rgba(45,36,56,0.08);
+  border-radius:20px;
+  overflow:hidden;
+}
+
+.level-fill {
+  height:100%;
+  border-radius:20px;
+  transition: width 0.5s ease;
+}
+
+.level-fill.coral { background: linear-gradient(90deg, var(--coral), var(--coral-soft)); }
+.level-fill.teal { background: linear-gradient(90deg, var(--teal), var(--teal-soft)); }
+.level-fill.plum { background: linear-gradient(90deg, var(--plum), var(--plum-soft)); }
+
+/* ===== BUBBLE POP GAME ===== */
+.bubble-arena {
+  position:relative;
+  width:100%;
+  aspect-ratio: 1 / 1.2;
+  max-height: 500px;
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, #FFF5F3 0%, #FFE8E4 100%);
+  overflow:hidden;
+  border: 2px solid rgba(232,115,108,0.15);
+  touch-action:manipulation;
+}
+
+.bubble {
+  position:absolute;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  transition: transform 0.15s;
+  animation: bubbleRise 0.6s ease-out backwards;
+  box-shadow: inset 0 -4px 12px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.bubble:active { transform:scale(0.9); }
+
+.bubble-inner {
+  font-size: 1.6rem;
+  pointer-events:none;
+}
+
+.bubble-shine {
+  position:absolute;
+  top:15%; left:20%;
+  width:30%; height:20%;
+  background: rgba(255,255,255,0.5);
+  border-radius:50%;
+  transform:rotate(-30deg);
+  pointer-events:none;
+}
+
+@keyframes bubbleRise {
+  from { transform:scale(0) translateY(40px); opacity:0; }
+  to { transform:scale(1) translateY(0); opacity:1; }
+}
+
+@keyframes bubblePop {
+  0% { transform:scale(1); opacity:1; }
+  50% { transform:scale(1.4); opacity:0.5; }
+  100% { transform:scale(0); opacity:0; }
+}
+
+.bubble.popping {
+  animation: bubblePop 0.3s ease-out forwards;
+  pointer-events:none;
+}
+
+/* Pop particles */
+.pop-particle {
+  position:absolute;
+  width:8px; height:8px;
+  border-radius:50%;
+  pointer-events:none;
+  animation: particleFly 0.5s ease-out forwards;
+}
+
+@keyframes particleFly {
+  from { transform:translate(0,0) scale(1); opacity:1; }
+  to { transform:translate(var(--tx), var(--ty)) scale(0); opacity:0; }
+}
+
+/* ===== CARD MATCH GAME ===== */
+.card-grid {
+  display:grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap:8px;
+  max-width:360px;
+  margin:0 auto;
+}
+
+.match-card {
+  aspect-ratio:3/4;
+  border-radius: var(--radius-sm);
+  cursor:pointer;
+  perspective:600px;
+  -webkit-perspective:600px;
+}
+
+.match-card-inner {
+  width:100%; height:100%;
+  position:relative;
+  transition: transform 0.5s;
+  transform-style:preserve-3d;
+  -webkit-transform-style:preserve-3d;
+}
+
+.match-card.flipped .match-card-inner { transform:rotateY(180deg); }
+.match-card.matched .match-card-inner { transform:rotateY(180deg); }
+
+.match-card-face {
+  position:absolute;
+  width:100%; height:100%;
+  border-radius: var(--radius-sm);
+  backface-visibility:hidden;
+  -webkit-backface-visibility:hidden;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:2rem;
+}
+
+.match-card-back {
+  background: linear-gradient(135deg, var(--teal), #4A8B7A);
+  box-shadow: inset 0 2px 4px rgba(255,255,255,0.2);
+}
+
+.match-card-back::after {
+  content:'🌿';
+  font-size:1.6rem;
+  opacity:0.4;
+}
+
+.match-card-front {
+  background:white;
+  border:2px solid rgba(91,155,138,0.2);
+  transform:rotateY(180deg);
+  font-size:2.2rem;
+}
+
+.match-card.matched {
+  opacity:0.5;
+  pointer-events:none;
+  transition: opacity 0.4s 0.3s;
+}
+
+/* ===== MAHJONG GAME ===== */
+.mahjong-grid {
+  display:grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap:6px;
+  max-width:380px;
+  margin:0 auto;
+}
+
+.mah-tile {
+  aspect-ratio:1;
+  border-radius: var(--radius-xs);
+  background: linear-gradient(180deg, #FFFFFF 0%, #F5F0FF 100%);
+  border:2px solid rgba(123,94,167,0.15);
+  box-shadow: 0 3px 0 rgba(123,94,167,0.12), 0 2px 8px rgba(0,0,0,0.06);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:1.5rem;
+  cursor:pointer;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.2s;
+  position:relative;
+}
+
+.mah-tile:active { transform:translateY(2px); box-shadow:none; }
+.mah-tile.selected {
+  border-color:var(--plum);
+  box-shadow: 0 0 0 3px rgba(123,94,167,0.25), 0 3px 0 rgba(123,94,167,0.12);
+  transform:translateY(-2px);
+}
+
+.mah-tile.matched-out {
+  animation: tileVanish 0.4s ease-out forwards;
+}
+
+@keyframes tileVanish {
+  0% { transform:scale(1); opacity:1; }
+  50% { transform:scale(1.1) rotate(5deg); opacity:0.5; }
+  100% { transform:scale(0); opacity:0; }
+}
+
+/* ===== BONUS ROUND / BIMS INTEGRATION ===== */
+.bonus-overlay {
+  display:none;
+  position:fixed;
+  top:0;left:0;right:0;bottom:0;
+  z-index:100;
+  background: rgba(45,36,56,0.6);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  animation: fadeIn 0.3s ease;
+}
+
+.bonus-overlay.active { display:flex; align-items:center; justify-content:center; }
+
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+.bonus-card {
+  background:white;
+  border-radius: var(--radius);
+  padding:28px 22px;
+  margin:16px;
+  max-width:400px;
+  width:100%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  text-align:center;
+  animation: bonusSlideUp 0.4s ease-out;
+  max-height:90vh;
+  overflow-y:auto;
+}
+
+@keyframes bonusSlideUp {
+  from { transform:translateY(40px); opacity:0; }
+  to { transform:translateY(0); opacity:1; }
+}
+
+.bonus-card .bonus-emoji { font-size:3rem; margin-bottom:8px; display:block; }
+.bonus-card h2 {
+  font-family:'Cormorant Garamond',serif;
+  font-size:1.6rem;
+  font-weight:700;
+  margin-bottom:6px;
+  color:var(--ink);
+}
+
+.bonus-card p {
+  font-size:0.92rem;
+  color:var(--ink-light);
+  font-weight:600;
+  line-height:1.5;
+  margin-bottom:16px;
+}
+
+.bonus-input {
+  width:100%;
+  padding:14px 16px;
+  border:2px solid rgba(45,36,56,0.1);
+  border-radius: var(--radius-sm);
+  font-family:'Nunito',sans-serif;
+  font-size:1rem;
+  font-weight:700;
+  color:var(--ink);
+  background:var(--cream);
+  outline:none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  text-align:center;
+}
+
+.bonus-input:focus {
+  border-color:var(--plum);
+  box-shadow: 0 0 0 4px rgba(123,94,167,0.12);
+}
+
+.bonus-select {
+  width:100%;
+  padding:14px 16px;
+  border:2px solid rgba(45,36,56,0.1);
+  border-radius: var(--radius-sm);
+  font-family:'Nunito',sans-serif;
+  font-size:1rem;
+  font-weight:700;
+  color:var(--ink);
+  background:var(--cream);
+  outline:none;
+  appearance:none;
+  cursor:pointer;
+  background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%232D2438'%3E%3Cpath d='M7 10l-5-5h10z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 14px center;
+}
+
+.bonus-options {
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  margin:12px 0;
+  text-align:left;
+}
+
+.bonus-opt-btn {
+  padding:12px 16px;
+  border:2px solid rgba(45,36,56,0.1);
+  border-radius: var(--radius-sm);
+  background:white;
+  font-family:'Nunito',sans-serif;
+  font-size:0.92rem;
+  font-weight:700;
+  color:var(--ink);
+  cursor:pointer;
+  transition: all 0.2s;
+  text-align:left;
+}
+
+.bonus-opt-btn:active, .bonus-opt-btn.selected {
+  border-color:var(--honey);
+  background: var(--honey-soft);
+  color:#6B4F12;
+}
+
+.btn-game {
+  display:block;
+  width:100%;
+  padding:14px;
+  border:none;
+  border-radius: var(--radius-sm);
+  font-family:'Nunito',sans-serif;
+  font-size:1rem;
+  font-weight:800;
+  cursor:pointer;
+  margin-top:12px;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.btn-game:active { transform:scale(0.97); }
+
+.btn-coral { background:var(--coral); color:white; box-shadow:0 4px 12px rgba(232,115,108,0.3); }
+.btn-teal { background:var(--teal); color:white; box-shadow:0 4px 12px rgba(91,155,138,0.3); }
+.btn-plum { background:var(--plum); color:white; box-shadow:0 4px 12px rgba(123,94,167,0.3); }
+.btn-honey { background:var(--honey); color:white; box-shadow:0 4px 12px rgba(232,180,77,0.3); }
+
+/* ===== RESULTS SCREEN ===== */
+.results-circle {
+  width:120px; height:120px;
+  border-radius:50%;
+  margin:0 auto 16px;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  border:4px solid;
+}
+
+.results-circle.great { background:linear-gradient(135deg,#E8F5E9,#C8E6C9); border-color:var(--teal); }
+.results-circle.ok { background:linear-gradient(135deg,var(--honey-soft),#FFF0D0); border-color:var(--honey); }
+.results-circle.concern { background:linear-gradient(135deg,var(--coral-soft),#FFD5D2); border-color:var(--coral); }
+
+.results-number {
+  font-family:'Cormorant Garamond',serif;
+  font-size:2.6rem;font-weight:700;line-height:1;
+}
+.results-of { font-size:0.8rem; font-weight:700; color:var(--ink-light); }
+
+.results-breakdown {
+  margin:16px 0;
+  background:var(--cream);
+  border-radius: var(--radius-sm);
+  padding:16px;
+}
+
+.results-row {
+  display:flex;justify-content:space-between;align-items:center;
+  padding:8px 0;
+  font-weight:700;
+  font-size:0.9rem;
+}
+
+.results-row + .results-row { border-top:1px solid rgba(45,36,56,0.06); }
+
+.results-val {
+  background:var(--plum-soft);
+  color:var(--ink);
+  padding:3px 12px;
+  border-radius:20px;
+  font-size:0.85rem;
+  font-weight:800;
+}
+
+/* Clinical panel */
+.clinical-toggle {
+  font-size:0.75rem;
+  color:var(--ink-light);
+  cursor:pointer;
+  opacity:0.4;
+  transition:opacity 0.2s;
+  margin-top:12px;
+}
+.clinical-toggle:hover { opacity:1; }
+
+.clinical-panel {
+  display:none;
+  margin-top:12px;
+  padding:16px;
+  background:#F8F4FC;
+  border-radius: var(--radius-sm);
+  border:1px dashed var(--plum-soft);
+  font-size:0.8rem;
+  text-align:left;
+}
+.clinical-panel.visible { display:block; }
+
+.clinical-panel table { width:100%; border-collapse:collapse; }
+.clinical-panel td, .clinical-panel th {
+  padding:4px 8px; text-align:left;
+  border-bottom:1px solid rgba(123,94,167,0.1);
+  font-size:0.78rem;
+}
+.clinical-panel th { font-weight:800; color:var(--plum); }
+
+/* ===== FLOATING SCORE ANIMATION ===== */
+.float-score {
+  position:fixed;
+  pointer-events:none;
+  font-weight:900;
+  font-size:1.4rem;
+  z-index:200;
+  animation: floatUp 1s ease-out forwards;
+}
+
+@keyframes floatUp {
+  0% { transform:translateY(0) scale(1); opacity:1; }
+  100% { transform:translateY(-60px) scale(1.2); opacity:0; }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width:380px) {
+  .card-grid { gap:6px; }
+  .match-card-front { font-size:1.6rem; }
+  .mahjong-grid { gap:4px; }
+  .mah-tile { font-size:1.2rem; }
+}
+
+@media (min-width:768px) {
+  .app { max-width:430px; box-shadow: 0 0 60px rgba(0,0,0,0.08); min-height:100vh; }
+}
+
+/* Timer display */
+.timer-display {
+  font-weight:800;
+  font-size:0.9rem;
+  color:var(--ink-light);
+  display:flex;align-items:center;gap:4px;
+}
+
+/* Confetti burst */
+.confetti-container {
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  pointer-events:none;z-index:300;
+}
+
+.confetti-piece {
+  position:absolute;
+  width:10px;height:10px;
+  animation: confettiFall 2s ease-out forwards;
+}
+
+@keyframes confettiFall {
+  0% { transform:translateY(-20px) rotate(0deg); opacity:1; }
+  100% { transform:translateY(100vh) rotate(720deg); opacity:0; }
+}
+
+/* Word remember display - objects that appeared in game */
+.remember-objects {
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  margin:12px 0;
+  flex-wrap:wrap;
+}
+
+.remember-chip {
+  background: linear-gradient(135deg, var(--honey-soft), #FFF5E0);
+  border:2px solid var(--honey);
+  padding:10px 18px;
+  border-radius:50px;
+  font-weight:800;
+  font-size:1rem;
+  animation: chipPop 0.4s ease-out backwards;
+}
+
+.remember-chip:nth-child(2) { animation-delay:0.1s; }
+.remember-chip:nth-child(3) { animation-delay:0.2s; }
+
+@keyframes chipPop {
+  from { transform:scale(0.5); opacity:0; }
+  to { transform:scale(1); opacity:1; }
+}
+</style>
+</head>
+<body>
+
+<div class="ambient"></div>
+
+<div class="app" id="app">
+
+  <!-- ===== HOME SCREEN ===== -->
+  <div class="screen active" id="screen-home">
+    <div class="home-header">
+      <span class="bloom-logo">🌸</span>
+      <h1>Bloom</h1>
+      <p class="tagline">Daily Brain Games</p>
+    </div>
+
+    <div class="streak-banner">
+      <span class="streak-flame">🔥</span>
+      <span id="streakText">Play a game to start your streak!</span>
+    </div>
+
+    <div class="game-grid">
+      <button class="game-tile bubble" onclick="startBubblePop()">
+        <div class="game-tile-icon">🫧</div>
+        <div class="game-tile-info">
+          <h3>Bubble Pop</h3>
+          <p>Pop the bubbles before they float away! Watch for special objects inside.</p>
+        </div>
+        <span class="badge">Fun</span>
+      </button>
+
+      <button class="game-tile cards" onclick="startCardMatch()">
+        <div class="game-tile-icon">🃏</div>
+        <div class="game-tile-info">
+          <h3>Garden Match</h3>
+          <p>Flip cards and find matching pairs. Remember what you see!</p>
+        </div>
+        <span class="badge">Classic</span>
+      </button>
+
+      <button class="game-tile mahjong" onclick="startMahjong()">
+        <div class="game-tile-icon">🀄</div>
+        <div class="game-tile-info">
+          <h3>Tile Garden</h3>
+          <p>Match beautiful tiles in pairs. Clear the board to win!</p>
+        </div>
+        <span class="badge">Zen</span>
+      </button>
+    </div>
+
+    <p style="text-align:center;margin-top:20px;font-size:0.8rem;color:var(--ink-light);font-weight:600;">
+      🌿 Play daily to keep your mind blooming!
+    </p>
+  </div>
+
+  <!-- ===== BUBBLE POP SCREEN ===== -->
+  <div class="screen" id="screen-bubble">
+    <div class="game-topbar">
+      <div class="game-topbar-left">
+        <button class="back-btn" onclick="goHome()">←</button>
+        <span class="game-title-small">🫧 Bubble Pop</span>
+      </div>
+      <div class="score-pill">
+        <span class="coin">⭐</span>
+        <span id="bubbleScore">0</span>
+      </div>
+    </div>
+    <div class="level-bar">
+      <span class="level-label" id="bubbleLevelLabel">Level 1</span>
+      <div class="level-track"><div class="level-fill coral" id="bubbleLevelFill" style="width:0%"></div></div>
+      <span class="timer-display">⏱ <span id="bubbleTimer">0:45</span></span>
+    </div>
+    <div class="bubble-arena" id="bubbleArena"></div>
+  </div>
+
+  <!-- ===== CARD MATCH SCREEN ===== -->
+  <div class="screen" id="screen-cards">
+    <div class="game-topbar">
+      <div class="game-topbar-left">
+        <button class="back-btn" onclick="goHome()">←</button>
+        <span class="game-title-small">🃏 Garden Match</span>
+      </div>
+      <div class="score-pill">
+        <span class="coin">⭐</span>
+        <span id="cardScore">0</span>
+      </div>
+    </div>
+    <div class="level-bar">
+      <span class="level-label" id="cardLevelLabel">Level 1</span>
+      <div class="level-track"><div class="level-fill teal" id="cardLevelFill" style="width:0%"></div></div>
+      <span class="timer-display">⏱ <span id="cardTimer">1:00</span></span>
+    </div>
+    <div class="card-grid" id="cardGrid"></div>
+  </div>
+
+  <!-- ===== MAHJONG SCREEN ===== -->
+  <div class="screen" id="screen-mahjong">
+    <div class="game-topbar">
+      <div class="game-topbar-left">
+        <button class="back-btn" onclick="goHome()">←</button>
+        <span class="game-title-small">🀄 Tile Garden</span>
+      </div>
+      <div class="score-pill">
+        <span class="coin">⭐</span>
+        <span id="mahScore">0</span>
+      </div>
+    </div>
+    <div class="level-bar">
+      <span class="level-label" id="mahLevelLabel">Level 1</span>
+      <div class="level-track"><div class="level-fill plum" id="mahLevelFill" style="width:0%"></div></div>
+      <span class="timer-display">⏱ <span id="mahTimer">1:30</span></span>
+    </div>
+    <div class="mahjong-grid" id="mahGrid"></div>
+  </div>
+
+  <!-- ===== RESULTS SCREEN ===== -->
+  <div class="screen" id="screen-results">
+    <div style="text-align:center; padding-top:20px;">
+      <span style="font-size:3rem; display:block; margin-bottom:8px;" id="resultsEmoji">🎉</span>
+      <h2 style="font-family:'Cormorant Garamond',serif; font-size:1.8rem; font-weight:700;" id="resultsTitle">Great Game!</h2>
+      <p style="color:var(--ink-light); font-weight:600; margin:6px 0 16px;" id="resultsSubtitle">Here's how you did</p>
+    </div>
+    <div id="resultsContent"></div>
+    <div style="text-align:center;">
+      <span class="clinical-toggle" onclick="toggleClinical()">📋 Clinical Details</span>
+      <div class="clinical-panel" id="clinicalPanel"></div>
+    </div>
+    <button class="btn-game btn-honey" style="margin-top:16px;" onclick="goHome()">🏠 Back to Games</button>
+    <button class="btn-game" style="background:rgba(45,36,56,0.06);color:var(--ink);margin-top:8px;" onclick="printClinical()">🖨️ Print Report</button>
+  </div>
+
+</div>
+
+<!-- ===== BONUS OVERLAY ===== -->
+<div class="bonus-overlay" id="bonusOverlay">
+  <div class="bonus-card" id="bonusCard"></div>
+</div>
+
+<div class="confetti-container" id="confettiContainer"></div>
+
+<script>
+// ========================================
+// BLOOM — BRAIN GAMES WITH EMBEDDED BIMS
+// ========================================
+
+// BIMS word sets that rotate — each set has 3 words with cues and emojis
+// These are embedded as "special items" in the games
+const BIMS_WORD_SETS = [
+  [
+    { word:'sock', cue:'something to wear', emoji:'🧦' },
+    { word:'blue', cue:'a color', emoji:'💙' },
+    { word:'bed', cue:'a piece of furniture', emoji:'🛏️' }
+  ],
+  [
+    { word:'hat', cue:'something to wear', emoji:'🎩' },
+    { word:'red', cue:'a color', emoji:'❤️' },
+    { word:'chair', cue:'a piece of furniture', emoji:'🪑' }
+  ],
+  [
+    { word:'shoe', cue:'something to wear', emoji:'👟' },
+    { word:'green', cue:'a color', emoji:'💚' },
+    { word:'table', cue:'a piece of furniture', emoji:'🪵' }
+  ]
+];
+
+// Game items (decoys mixed with BIMS words)
+const GAME_EMOJIS = ['🌸','🌷','🦋','🌻','🍎','🍊','🌺','🐝','🐞','🍇','🌹','🎀','🧁','🍰','☕','🫖','🎨','🎵','📚','🕯️','🧸','💐','🪻','🌾'];
+
+// ===== STATE =====
+let currentWordSet;
+let bimsState = {
+  immediateRecallScore: 0,
+  wordsRepeated: [],
+  yearScore: 0, monthScore: 0, dayScore: 0,
+  yearAnswer: '', monthAnswer: '', dayAnswer: '',
+  recallScores: [0,0,0],
+  recallAnswers: [],
+  totalScore: 0,
+  gameType: '',
+  gameScore: 0,
+  startTime: null
+};
+
+let gameTimers = {};
+
+function resetBimsState() {
+  const setIndex = Math.floor(Math.random() * BIMS_WORD_SETS.length);
+  currentWordSet = BIMS_WORD_SETS[setIndex];
+  bimsState = {
+    immediateRecallScore: 0,
+    wordsRepeated: [],
+    yearScore: 0, monthScore: 0, dayScore: 0,
+    yearAnswer: '', monthAnswer: '', dayAnswer: '',
+    recallScores: [0,0,0],
+    recallAnswers: [],
+    totalScore: 0,
+    gameType: '',
+    gameScore: 0,
+    startTime: new Date()
+  };
+}
+
+// ===== NAVIGATION =====
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function goHome() {
+  Object.values(gameTimers).forEach(t => clearInterval(t));
+  gameTimers = {};
+  showScreen('screen-home');
+  document.body.classList.remove('game-active');
+}
+
+// ===== BONUS ROUND SYSTEM =====
+// These are the BIMS assessment moments disguised as bonus rounds
+
+function showBonus(html, onClose) {
+  const overlay = document.getElementById('bonusOverlay');
+  document.getElementById('bonusCard').innerHTML = html;
+  overlay.classList.add('active');
+  overlay._onClose = onClose;
+}
+
+function closeBonus() {
+  const overlay = document.getElementById('bonusOverlay');
+  overlay.classList.remove('active');
+  if (overlay._onClose) overlay._onClose();
+}
+
+// Phase 1: "Remember these special items!" — Immediate Recall intro
+function showBimsIntro(callback) {
+  const words = currentWordSet;
+  showBonus(`
+    <span class="bonus-emoji">✨</span>
+    <h2>Bonus Round!</h2>
+    <p>These <strong>3 special items</strong> appeared in the game!<br>Remember them for bonus points later!</p>
+    <div class="remember-objects">
+      ${words.map(w => `<div class="remember-chip">${w.emoji} ${w.word.charAt(0).toUpperCase()+w.word.slice(1)}</div>`).join('')}
+    </div>
+    <p style="font-size:0.85rem;color:var(--coral);">Say them out loud: <strong>"${words.map(w=>w.word).join(', ')}"</strong></p>
+    <button class="btn-game btn-coral" onclick="showBimsRepeat()">Got it! 🧠</button>
+  `);
+  window._bimsCallback = callback;
+}
+
+// Phase 2: Repeat back — Immediate Recall scoring
+function showBimsRepeat() {
+  const words = currentWordSet;
+  showBonus(`
+    <span class="bonus-emoji">🗣️</span>
+    <h2>Quick — Repeat Them!</h2>
+    <p>Type the 3 special items you just saw.<br>Earn bonus points for each one!</p>
+    <input type="text" class="bonus-input" id="bimsRepeatInput" placeholder="Type the 3 words..." autocomplete="off">
+    <p style="font-size:0.8rem;color:var(--ink-light);margin-top:8px;">Separate with commas or spaces</p>
+    <button class="btn-game btn-coral" onclick="scoreBimsRepeat()">Check! ✅</button>
+  `);
+  setTimeout(() => {
+    const el = document.getElementById('bimsRepeatInput');
+    if(el) el.focus();
+  }, 400);
+}
+
+function scoreBimsRepeat() {
+  const input = document.getElementById('bimsRepeatInput').value.toLowerCase().trim();
+  const typed = input.split(/[\s,;]+/).map(w => w.trim()).filter(Boolean);
+  let score = 0;
+  let matched = [];
+  currentWordSet.forEach(w => {
+    if (typed.includes(w.word)) { score++; matched.push(w.word); }
+  });
+  bimsState.immediateRecallScore = score;
+  bimsState.wordsRepeated = matched;
+
+  // Show cues/reminders before moving on
+  const words = currentWordSet;
+  let msg = score === 3 ? `Perfect! All 3! 🎉` : score > 0 ? `Nice — you got ${score}!` : `No worries!`;
+  showBonus(`
+    <span class="bonus-emoji">${score === 3 ? '🎉' : '💡'}</span>
+    <h2>${msg}</h2>
+    <p>Here they are again with hints — remember them for the final bonus!</p>
+    <div class="remember-objects">
+      ${words.map(w => `<div class="remember-chip">${w.emoji} ${w.word.charAt(0).toUpperCase()+w.word.slice(1)}<br><span style="font-size:0.75rem;font-weight:600;opacity:0.6;">${w.cue}</span></div>`).join('')}
+    </div>
+    <p style="font-size:0.85rem;color:var(--teal);font-weight:700;">+${score * 50} bonus points! 🌟</p>
+    <button class="btn-game btn-teal" onclick="closeBonusToOrientation()">Keep Playing! 🎮</button>
+  `);
+  bimsState.gameScore += score * 50;
+}
+
+// Phase 3: Orientation — disguised as "Daily Trivia"
+function closeBonusToOrientation() {
+  closeBonus();
+  // Continue game for a bit, then show orientation
+  setTimeout(() => showBimsOrientation(), 8000 + Math.random() * 5000);
+}
+
+function showBimsOrientation() {
+  const now = new Date();
+  showBonus(`
+    <span class="bonus-emoji">🧩</span>
+    <h2>Daily Trivia!</h2>
+    <p>Quick brain teasers for extra points! 🎯</p>
+    <div style="text-align:left; margin:12px 0;">
+      <div style="margin-bottom:14px;">
+        <label style="font-weight:800;font-size:0.88rem;display:block;margin-bottom:6px;">🗓️ What year is it right now?</label>
+        <input type="text" class="bonus-input" id="bimsYear" placeholder="e.g. 2026" inputmode="numeric" autocomplete="off">
+      </div>
+      <div style="margin-bottom:14px;">
+        <label style="font-weight:800;font-size:0.88rem;display:block;margin-bottom:6px;">🌷 What month are we in?</label>
+        <select class="bonus-select" id="bimsMonth">
+          <option value="">Pick month...</option>
+          ${['January','February','March','April','May','June','July','August','September','October','November','December'].map((m,i) => `<option value="${i+1}">${m}</option>`).join('')}
+        </select>
+      </div>
+      <div>
+        <label style="font-weight:800;font-size:0.88rem;display:block;margin-bottom:6px;">☀️ What day of the week is it?</label>
+        <select class="bonus-select" id="bimsDay">
+          <option value="">Pick day...</option>
+          ${['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].map(d => `<option value="${d}">${d}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <button class="btn-game btn-plum" onclick="scoreBimsOrientation()">Submit for Points! ⭐</button>
+  `);
+}
+
+function scoreBimsOrientation() {
+  const now = new Date();
+  const actualYear = now.getFullYear();
+  const actualMonth = now.getMonth() + 1;
+  const actualDay = now.toLocaleDateString('en-US',{weekday:'long'});
+  const dayOfMonth = now.getDate();
+
+  // Year (0-3)
+  const enteredYear = parseInt(document.getElementById('bimsYear').value);
+  bimsState.yearAnswer = document.getElementById('bimsYear').value;
+  if (!isNaN(enteredYear)) {
+    const diff = Math.abs(enteredYear - actualYear);
+    bimsState.yearScore = diff === 0 ? 3 : diff === 1 ? 2 : diff <= 5 ? 1 : 0;
+  }
+
+  // Month (0-2)
+  const enteredMonth = parseInt(document.getElementById('bimsMonth').value);
+  bimsState.monthAnswer = document.getElementById('bimsMonth').value;
+  if (enteredMonth) {
+    const mDiff = Math.abs(enteredMonth - actualMonth);
+    if (enteredMonth === actualMonth) {
+      bimsState.monthScore = 2;
+    } else if (mDiff === 1) {
+      bimsState.monthScore = ((enteredMonth === actualMonth-1 && dayOfMonth<=5) || (enteredMonth === actualMonth+1 && dayOfMonth>=26)) ? 2 : 1;
+    } else {
+      bimsState.monthScore = 0;
+    }
+  }
+
+  // Day (0-1)
+  bimsState.dayAnswer = document.getElementById('bimsDay').value;
+  bimsState.dayScore = (bimsState.dayAnswer === actualDay) ? 1 : 0;
+
+  const orientScore = bimsState.yearScore + bimsState.monthScore + bimsState.dayScore;
+  bimsState.gameScore += orientScore * 30;
+
+  showBonus(`
+    <span class="bonus-emoji">🎯</span>
+    <h2>+${orientScore * 30} Trivia Points!</h2>
+    <p>Nice job on the daily trivia! Keep playing — one more bonus round coming up!</p>
+    <button class="btn-game btn-honey" onclick="closeBonusToRecall()">Continue! 🎮</button>
+  `);
+}
+
+// Phase 4: Recall — after more gameplay
+function closeBonusToRecall() {
+  closeBonus();
+  setTimeout(() => showBimsRecall(), 10000 + Math.random() * 8000);
+}
+
+function showBimsRecall() {
+  const words = currentWordSet;
+  showBonus(`
+    <span class="bonus-emoji">🔮</span>
+    <h2>Final Bonus Round!</h2>
+    <p>Remember those 3 special items from earlier?<br>Let's see how many you recall for big points!</p>
+    <div id="recallContainer" style="text-align:left;">
+      ${words.map((w, i) => `
+        <div style="margin-bottom:14px; padding:12px; background:var(--cream); border-radius:12px;">
+          <div style="font-weight:800; font-size:0.9rem; margin-bottom:8px;">${w.emoji} Item ${i+1}:</div>
+          <div class="bonus-options" id="recallOpts${i}">
+            <button class="bonus-opt-btn" onclick="selectRecallOpt(${i},'free',this)">✅ I remember it!</button>
+            <button class="bonus-opt-btn" onclick="selectRecallOpt(${i},'cue',this)">💡 Give me a hint (${w.cue})</button>
+            <button class="bonus-opt-btn" onclick="selectRecallOpt(${i},'forgot',this)">😅 Can't remember</button>
+          </div>
+          <div id="recallTyping${i}" style="display:none; margin-top:8px;">
+            <input type="text" class="bonus-input" placeholder="Type the word..." autocomplete="off" data-idx="${i}">
+          </div>
+        </div>
+      `).join('')}
+    </div>
+    <button class="btn-game btn-coral" onclick="scoreBimsRecall()">Get My Points! 🏆</button>
+  `);
+}
+
+function selectRecallOpt(idx, type, btn) {
+  const container = document.getElementById(`recallOpts${idx}`);
+  container.querySelectorAll('.bonus-opt-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  btn.dataset.type = type;
+
+  const typingDiv = document.getElementById(`recallTyping${idx}`);
+  if (type === 'free' || type === 'cue') {
+    typingDiv.style.display = 'block';
+    typingDiv.querySelector('input').focus();
+    typingDiv.querySelector('input').placeholder = type === 'cue'
+      ? `Hint: ${currentWordSet[idx].cue} — what's the word?`
+      : 'Type the word you remember...';
+  } else {
+    typingDiv.style.display = 'none';
+  }
+}
+
+function scoreBimsRecall() {
+  currentWordSet.forEach((w, i) => {
+    const container = document.getElementById(`recallOpts${i}`);
+    const selected = container.querySelector('.bonus-opt-btn.selected');
+    const input = document.querySelector(`#recallTyping${i} input`);
+    const typed = input ? input.value.toLowerCase().trim() : '';
+    const type = selected ? selected.dataset.type : 'forgot';
+
+    if (type === 'free' && typed === w.word) {
+      bimsState.recallScores[i] = 2;
+      bimsState.recallAnswers[i] = { type:'no_cue', typed };
+    } else if (type === 'cue' && typed === w.word) {
+      bimsState.recallScores[i] = 1;
+      bimsState.recallAnswers[i] = { type:'with_cue', typed };
+    } else if ((type === 'free' || type === 'cue') && typed && typed !== w.word) {
+      bimsState.recallScores[i] = 0;
+      bimsState.recallAnswers[i] = { type:'incorrect', typed };
+    } else {
+      bimsState.recallScores[i] = 0;
+      bimsState.recallAnswers[i] = { type:'not_recalled', typed:'' };
+    }
+  });
+
+  const recallTotal = bimsState.recallScores.reduce((a,b)=>a+b,0);
+  bimsState.gameScore += recallTotal * 75;
+
+  closeBonus();
+  showResults();
+}
+
+// ===== RESULTS =====
+function showResults() {
+  Object.values(gameTimers).forEach(t => clearInterval(t));
+
+  const ir = bimsState.immediateRecallScore;
+  const orient = bimsState.yearScore + bimsState.monthScore + bimsState.dayScore;
+  const recall = bimsState.recallScores.reduce((a,b)=>a+b,0);
+  bimsState.totalScore = ir + orient + recall;
+
+  let cat, catClass, emoji;
+  if (bimsState.totalScore >= 13) { cat='Blooming Brilliantly!'; catClass='great'; emoji='🌸'; }
+  else if (bimsState.totalScore >= 8) { cat='Growing Nicely!'; catClass='ok'; emoji='🌱'; }
+  else { cat='Keep Growing!'; catClass='concern'; emoji='🌻'; }
+
+  document.getElementById('resultsEmoji').textContent = emoji;
+  document.getElementById('resultsTitle').textContent = cat;
+  document.getElementById('resultsSubtitle').textContent = `Game Score: ${bimsState.gameScore} points`;
+
+  document.getElementById('resultsContent').innerHTML = `
+    <div class="results-circle ${catClass}">
+      <div class="results-number">${bimsState.totalScore}</div>
+      <div class="results-of">/ 15 Brain Points</div>
+    </div>
+    <div class="results-breakdown">
+      <div class="results-row">
+        <span>🧠 Word Memory</span>
+        <span class="results-val">${ir} / 3</span>
+      </div>
+      <div class="results-row">
+        <span>🧩 Daily Trivia</span>
+        <span class="results-val">${orient} / 6</span>
+      </div>
+      <div class="results-row">
+        <span>🔮 Word Recall</span>
+        <span class="results-val">${recall} / 6</span>
+      </div>
+      <div class="results-row" style="font-size:1rem;border-top:2px solid rgba(45,36,56,0.1);padding-top:10px;">
+        <span><strong>🌿 Total Brain Score</strong></span>
+        <span class="results-val" style="background:var(--ink);color:white;">${bimsState.totalScore} / 15</span>
+      </div>
+    </div>
+  `;
+
+  // Clinical panel
+  const now = new Date();
+  document.getElementById('clinicalPanel').innerHTML = buildClinicalReport(now);
+
+  showScreen('screen-results');
+  if (bimsState.totalScore >= 13) launchConfetti();
+}
+
+function buildClinicalReport(now) {
+  const words = currentWordSet;
+  const fmtRecall = (i) => {
+    const a = bimsState.recallAnswers[i];
+    if(!a) return 'No response';
+    if(a.type==='no_cue') return `Recalled w/o cue ("${a.typed}")`;
+    if(a.type==='with_cue') return `Recalled w/ cue ("${a.typed}")`;
+    if(a.type==='incorrect') return `Incorrect ("${a.typed}")`;
+    return 'Not recalled';
+  };
+
+  const classification = bimsState.totalScore >= 13 ? 'Intact (13-15)' : bimsState.totalScore >= 8 ? 'Moderate Impairment (8-12)' : 'Severe Impairment (0-7)';
+
+  return `
+    <h4 style="font-family:'Cormorant Garamond',serif;font-size:1rem;margin-bottom:8px;">BIMS — Brief Interview for Mental Status (MDS 3.0 Section C)</h4>
+    <p style="font-size:0.78rem;color:var(--ink-light);margin-bottom:8px;">
+      Date: <strong>${now.toLocaleDateString()}</strong> | Time: <strong>${now.toLocaleTimeString()}</strong> | Game: <strong>${bimsState.gameType}</strong>
+      <br>Word Set: <strong>${words.map(w=>w.word).join(', ')}</strong>
+    </p>
+    <table>
+      <tr><th>Section</th><th>Item</th><th>Response</th><th>Pts</th></tr>
+      <tr><td rowspan="3"><strong>C0200</strong><br>Imm. Recall</td>
+        <td>${words[0].word}</td><td>${bimsState.wordsRepeated.includes(words[0].word)?'✅ Correct':'❌ Missed'}</td><td>${bimsState.wordsRepeated.includes(words[0].word)?1:0}</td></tr>
+      <tr><td>${words[1].word}</td><td>${bimsState.wordsRepeated.includes(words[1].word)?'✅ Correct':'❌ Missed'}</td><td>${bimsState.wordsRepeated.includes(words[1].word)?1:0}</td></tr>
+      <tr><td>${words[2].word}</td><td>${bimsState.wordsRepeated.includes(words[2].word)?'✅ Correct':'❌ Missed'}</td><td>${bimsState.wordsRepeated.includes(words[2].word)?1:0}</td></tr>
+      <tr><td rowspan="3"><strong>C0300</strong><br>Orientation</td>
+        <td>Year (${now.getFullYear()})</td><td>Ans: ${bimsState.yearAnswer||'—'}</td><td>${bimsState.yearScore}/3</td></tr>
+      <tr><td>Month (${now.toLocaleString('default',{month:'long'})})</td><td>Ans: ${bimsState.monthAnswer?new Date(2000,bimsState.monthAnswer-1).toLocaleString('default',{month:'long'}):'—'}</td><td>${bimsState.monthScore}/2</td></tr>
+      <tr><td>Day (${now.toLocaleDateString('en-US',{weekday:'long'})})</td><td>Ans: ${bimsState.dayAnswer||'—'}</td><td>${bimsState.dayScore}/1</td></tr>
+      <tr><td rowspan="3"><strong>C0400</strong><br>Recall</td>
+        <td>${words[0].word}</td><td>${fmtRecall(0)}</td><td>${bimsState.recallScores[0]}/2</td></tr>
+      <tr><td>${words[1].word}</td><td>${fmtRecall(1)}</td><td>${bimsState.recallScores[1]}/2</td></tr>
+      <tr><td>${words[2].word}</td><td>${fmtRecall(2)}</td><td>${bimsState.recallScores[2]}/2</td></tr>
+    </table>
+    <div style="margin-top:10px;padding:10px;background:white;border-radius:8px;border:1px solid rgba(123,94,167,0.15);">
+      <strong>C0500 BIMS Summary: ${bimsState.totalScore}/15 — ${classification}</strong>
+    </div>
+  `;
+}
+
+function toggleClinical() {
+  document.getElementById('clinicalPanel').classList.toggle('visible');
+}
+
+function printClinical() {
+  document.getElementById('clinicalPanel').classList.add('visible');
+  window.print();
+}
+
+// ===== CONFETTI =====
+function launchConfetti() {
+  const container = document.getElementById('confettiContainer');
+  const colors = ['#E8736C','#5B9B8A','#E8B44D','#7B5EA7','#6AABE8','#FF8FA3'];
+  for(let i=0;i<40;i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = Math.random()*100+'%';
+    piece.style.background = colors[Math.floor(Math.random()*colors.length)];
+    piece.style.borderRadius = Math.random()>0.5 ? '50%' : '2px';
+    piece.style.width = (6+Math.random()*8)+'px';
+    piece.style.height = (6+Math.random()*8)+'px';
+    piece.style.animationDelay = Math.random()*0.8+'s';
+    piece.style.animationDuration = (1.5+Math.random()*1.5)+'s';
+    container.appendChild(piece);
+  }
+  setTimeout(()=>container.innerHTML='', 3000);
+}
+
+// ===== FLOAT SCORE ANIMATION =====
+function showFloatScore(x, y, text, color) {
+  const el = document.createElement('div');
+  el.className = 'float-score';
+  el.textContent = text;
+  el.style.left = x+'px';
+  el.style.top = y+'px';
+  el.style.color = color || 'var(--coral)';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 1000);
+}
+
+// ===== TIMER UTILITY =====
+function startTimer(displayId, seconds, onEnd) {
+  let remaining = seconds;
+  const display = document.getElementById(displayId);
+  const update = () => {
+    const m = Math.floor(remaining/60);
+    const s = remaining%60;
+    display.textContent = `${m}:${s.toString().padStart(2,'0')}`;
+    if(remaining <= 0) { clearInterval(timer); if(onEnd) onEnd(); }
+    remaining--;
+  };
+  update();
+  const timer = setInterval(update, 1000);
+  return timer;
+}
+
+
+// =========================================================
+// GAME 1: BUBBLE POP
+// =========================================================
+let bubbleState = { score:0, level:1, popped:0, bimsPhase:0, totalBubbles:0 };
+
+function startBubblePop() {
+  resetBimsState();
+  bimsState.gameType = 'Bubble Pop';
+  bubbleState = { score:0, level:1, popped:0, bimsPhase:0, totalBubbles:0 };
+  document.getElementById('bubbleScore').textContent = '0';
+  document.getElementById('bubbleLevelLabel').textContent = 'Level 1';
+  document.getElementById('bubbleLevelFill').style.width = '0%';
+  document.body.classList.add('game-active');
+  showScreen('screen-bubble');
+
+  // Start timer
+  gameTimers.bubble = startTimer('bubbleTimer', 90, () => {
+    if (bubbleState.bimsPhase < 3) showBimsRecall(); // force recall if time runs out
+  });
+
+  spawnBubbleWave();
+}
+
+function spawnBubbleWave() {
+  const arena = document.getElementById('bubbleArena');
+  arena.innerHTML = '';
+  const rect = arena.getBoundingClientRect();
+  const arenaW = rect.width;
+  const arenaH = rect.height;
+
+  // Mix BIMS emojis into the bubble set
+  const bimsEmojis = currentWordSet.map(w => w.emoji);
+  let emojis = [...GAME_EMOJIS.slice(0,9), ...bimsEmojis];
+  emojis = emojis.sort(() => Math.random()-0.5).slice(0, 8 + bubbleState.level * 2);
+
+  const bubbleSize = Math.min(70, arenaW / 5);
+
+  emojis.forEach((emoji, i) => {
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    const hue = Math.random()*360;
+    const colors = [
+      `hsla(${hue},70%,85%,0.9)`,
+      `hsla(${hue+30},65%,75%,0.9)`,
+      `hsla(${hue-20},60%,80%,0.9)`
+    ];
+    const c = colors[Math.floor(Math.random()*3)];
+    bubble.style.background = `radial-gradient(circle at 35% 35%, hsla(${hue},80%,95%,0.8), ${c})`;
+    bubble.style.width = bubbleSize + 'px';
+    bubble.style.height = bubbleSize + 'px';
+
+    // Position randomly avoiding overlap (simple)
+    const maxX = arenaW - bubbleSize - 8;
+    const maxY = arenaH - bubbleSize - 8;
+    bubble.style.left = (8 + Math.random() * maxX) + 'px';
+    bubble.style.top = (8 + Math.random() * maxY) + 'px';
+    bubble.style.animationDelay = (i * 0.08) + 's';
+
+    bubble.innerHTML = `<div class="bubble-shine"></div><div class="bubble-inner">${emoji}</div>`;
+
+    bubble.addEventListener('click', (e) => popBubble(bubble, e));
+    bubble.addEventListener('touchstart', (e) => { e.preventDefault(); popBubble(bubble, e); }, {passive:false});
+
+    arena.appendChild(bubble);
+    bubbleState.totalBubbles++;
+  });
+}
+
+function popBubble(bubble, e) {
+  if (bubble.classList.contains('popping')) return;
+  bubble.classList.add('popping');
+  bubbleState.popped++;
+  bubbleState.score += 10;
+  document.getElementById('bubbleScore').textContent = bubbleState.score;
+
+  // Float score
+  const rect = bubble.getBoundingClientRect();
+  showFloatScore(rect.left + rect.width/2, rect.top, '+10', 'var(--coral)');
+
+  // Particles
+  const arena = document.getElementById('bubbleArena');
+  for (let i=0;i<6;i++) {
+    const p = document.createElement('div');
+    p.className = 'pop-particle';
+    p.style.left = (parseFloat(bubble.style.left) + parseFloat(bubble.style.width)/2) + 'px';
+    p.style.top = (parseFloat(bubble.style.top) + parseFloat(bubble.style.height)/2) + 'px';
+    p.style.background = `hsl(${Math.random()*360},70%,70%)`;
+    p.style.setProperty('--tx', (Math.random()*80-40)+'px');
+    p.style.setProperty('--ty', (Math.random()*80-40)+'px');
+    arena.appendChild(p);
+    setTimeout(()=>p.remove(), 500);
+  }
+
+  setTimeout(()=>bubble.remove(), 300);
+
+  // Level progress
+  const levelTarget = 6 + bubbleState.level * 3;
+  const progress = Math.min(100, (bubbleState.popped / levelTarget) * 100);
+  document.getElementById('bubbleLevelFill').style.width = progress + '%';
+
+  // Check BIMS phases after certain pop counts
+  if (bubbleState.popped === 8 && bubbleState.bimsPhase === 0) {
+    bubbleState.bimsPhase = 1;
+    setTimeout(() => showBimsIntro(() => { spawnBubbleWave(); }), 600);
+  } else if (bubbleState.popped >= levelTarget) {
+    bubbleState.level++;
+    bubbleState.popped = 0;
+    document.getElementById('bubbleLevelLabel').textContent = 'Level ' + bubbleState.level;
+    document.getElementById('bubbleLevelFill').style.width = '0%';
+    spawnBubbleWave();
+  }
+
+  // Check if arena empty, spawn more
+  const remaining = arena.querySelectorAll('.bubble:not(.popping)');
+  if (remaining.length <= 1 && bubbleState.bimsPhase !== 1) {
+    spawnBubbleWave();
+  }
+}
+
+
+// =========================================================
+// GAME 2: CARD MATCH
+// =========================================================
+let cardState = { score:0, level:1, flipped:[], matchCount:0, totalPairs:0, bimsPhase:0, locked:false };
+
+function startCardMatch() {
+  resetBimsState();
+  bimsState.gameType = 'Garden Match';
+  cardState = { score:0, level:1, flipped:[], matchCount:0, totalPairs:0, bimsPhase:0, locked:false };
+  document.getElementById('cardScore').textContent = '0';
+  document.getElementById('cardLevelLabel').textContent = 'Level 1';
+  document.getElementById('cardLevelFill').style.width = '0%';
+  document.body.classList.add('game-active');
+  showScreen('screen-cards');
+
+  gameTimers.card = startTimer('cardTimer', 120, () => {
+    if (cardState.bimsPhase < 3) showBimsRecall();
+  });
+
+  buildCardGrid();
+}
+
+function buildCardGrid() {
+  const grid = document.getElementById('cardGrid');
+  grid.innerHTML = '';
+
+  // 8 pairs = 16 cards for 4x4 grid
+  const bimsEmojis = currentWordSet.map(w => w.emoji);
+  let pool = [...GAME_EMOJIS.slice(0,5), ...bimsEmojis];
+  pool = pool.sort(()=>Math.random()-0.5).slice(0,8);
+
+  let cards = [...pool, ...pool];
+  cards = cards.sort(() => Math.random()-0.5);
+  cardState.totalPairs = 8;
+
+  cards.forEach((emoji, i) => {
+    const card = document.createElement('div');
+    card.className = 'match-card';
+    card.dataset.emoji = emoji;
+    card.dataset.index = i;
+    card.innerHTML = `
+      <div class="match-card-inner">
+        <div class="match-card-face match-card-back"></div>
+        <div class="match-card-face match-card-front">${emoji}</div>
+      </div>
+    `;
+    card.addEventListener('click', () => flipCard(card));
+    grid.appendChild(card);
+  });
+}
+
+function flipCard(card) {
+  if (cardState.locked) return;
+  if (card.classList.contains('flipped') || card.classList.contains('matched')) return;
+
+  card.classList.add('flipped');
+  cardState.flipped.push(card);
+
+  if (cardState.flipped.length === 2) {
+    cardState.locked = true;
+    const [a, b] = cardState.flipped;
+    if (a.dataset.emoji === b.dataset.emoji) {
+      // Match!
+      setTimeout(() => {
+        a.classList.add('matched');
+        b.classList.add('matched');
+        cardState.matchCount++;
+        cardState.score += 25;
+        document.getElementById('cardScore').textContent = cardState.score;
+
+        const rect = b.getBoundingClientRect();
+        showFloatScore(rect.left+rect.width/2, rect.top, '+25', 'var(--teal)');
+
+        const progress = (cardState.matchCount / cardState.totalPairs) * 100;
+        document.getElementById('cardLevelFill').style.width = progress + '%';
+
+        cardState.flipped = [];
+        cardState.locked = false;
+
+        // BIMS triggers
+        if (cardState.matchCount === 3 && cardState.bimsPhase === 0) {
+          cardState.bimsPhase = 1;
+          setTimeout(() => showBimsIntro(() => {}), 500);
+        }
+
+        if (cardState.matchCount >= cardState.totalPairs) {
+          cardState.level++;
+          document.getElementById('cardLevelLabel').textContent = 'Level ' + cardState.level;
+          document.getElementById('cardLevelFill').style.width = '0%';
+          cardState.matchCount = 0;
+          setTimeout(() => buildCardGrid(), 600);
+        }
+      }, 400);
+    } else {
+      // No match
+      setTimeout(() => {
+        a.classList.remove('flipped');
+        b.classList.remove('flipped');
+        cardState.flipped = [];
+        cardState.locked = false;
+      }, 800);
+    }
+  }
+}
+
+
+// =========================================================
+// GAME 3: MAHJONG
+// =========================================================
+let mahState = { score:0, level:1, selected:null, matchCount:0, totalPairs:0, bimsPhase:0 };
+
+function startMahjong() {
+  resetBimsState();
+  bimsState.gameType = 'Tile Garden';
+  mahState = { score:0, level:1, selected:null, matchCount:0, totalPairs:0, bimsPhase:0 };
+  document.getElementById('mahScore').textContent = '0';
+  document.getElementById('mahLevelLabel').textContent = 'Level 1';
+  document.getElementById('mahLevelFill').style.width = '0%';
+  document.body.classList.add('game-active');
+  showScreen('screen-mahjong');
+
+  gameTimers.mah = startTimer('mahTimer', 120, () => {
+    if (mahState.bimsPhase < 3) showBimsRecall();
+  });
+
+  buildMahGrid();
+}
+
+function buildMahGrid() {
+  const grid = document.getElementById('mahGrid');
+  grid.innerHTML = '';
+
+  // 18 pairs for 6x6 grid
+  const bimsEmojis = currentWordSet.map(w => w.emoji);
+  let pool = [...GAME_EMOJIS.slice(0,15), ...bimsEmojis];
+  pool = pool.sort(()=>Math.random()-0.5).slice(0,18);
+
+  let tiles = [...pool, ...pool]; // 36 tiles
+  tiles = tiles.sort(() => Math.random()-0.5);
+  mahState.totalPairs = 18;
+
+  tiles.forEach((emoji, i) => {
+    const tile = document.createElement('div');
+    tile.className = 'mah-tile';
+    tile.dataset.emoji = emoji;
+    tile.dataset.index = i;
+    tile.textContent = emoji;
+    tile.addEventListener('click', () => tapMahTile(tile));
+    grid.appendChild(tile);
+  });
+}
+
+function tapMahTile(tile) {
+  if (tile.classList.contains('matched-out')) return;
+
+  if (mahState.selected === null) {
+    tile.classList.add('selected');
+    mahState.selected = tile;
+  } else if (mahState.selected === tile) {
+    tile.classList.remove('selected');
+    mahState.selected = null;
+  } else {
+    // Check match
+    if (mahState.selected.dataset.emoji === tile.dataset.emoji) {
+      const a = mahState.selected;
+      tile.classList.add('selected');
+      setTimeout(() => {
+        a.classList.remove('selected');
+        a.classList.add('matched-out');
+        tile.classList.remove('selected');
+        tile.classList.add('matched-out');
+        mahState.matchCount++;
+        mahState.score += 20;
+        document.getElementById('mahScore').textContent = mahState.score;
+
+        const rect = tile.getBoundingClientRect();
+        showFloatScore(rect.left+rect.width/2, rect.top, '+20', 'var(--plum)');
+
+        const progress = (mahState.matchCount / mahState.totalPairs) * 100;
+        document.getElementById('mahLevelFill').style.width = progress + '%';
+
+        // BIMS triggers
+        if (mahState.matchCount === 4 && mahState.bimsPhase === 0) {
+          mahState.bimsPhase = 1;
+          setTimeout(() => showBimsIntro(() => {}), 500);
+        }
+
+        if (mahState.matchCount >= mahState.totalPairs) {
+          mahState.level++;
+          document.getElementById('mahLevelLabel').textContent = 'Level ' + mahState.level;
+          document.getElementById('mahLevelFill').style.width = '0%';
+          mahState.matchCount = 0;
+          setTimeout(() => buildMahGrid(), 600);
+        }
+      }, 200);
+    } else {
+      tile.classList.add('selected');
+      setTimeout(() => {
+        mahState.selected.classList.remove('selected');
+        tile.classList.remove('selected');
+      }, 400);
+    }
+    mahState.selected = null;
+  }
+}
+
+</script>
+</body>
+</html>

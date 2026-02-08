@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memory Garden — A Fun Brain Game</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --rose: #D4707A;
+  --rose-light: #F2B8BE;
+  --sage: #7A9E7E;
+  --sage-light: #C5DCC7;
+  --cream: #FFF8F0;
+  --lavender: #B8A9C9;
+  --lavender-light: #E3DAF0;
+  --gold: #D4A854;
+  --gold-light: #F0DDB4;
+  --deep-plum: #5C3D5E;
+  --warm-brown: #6B4A3D;
+  --text: #3D2B2B;
+  --text-light: #7A6565;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Quicksand', sans-serif;
+  background: var(--cream);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Floral Background Pattern */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background:
+    radial-gradient(ellipse at 10% 20%, rgba(212,112,122,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 90% 80%, rgba(184,169,201,0.1) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(122,158,126,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, rgba(212,168,84,0.06) 0%, transparent 40%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app-container {
+  position: relative;
+  z-index: 1;
+  max-width: 580px;
+  margin: 0 auto;
+  padding: 24px 20px;
+  min-height: 100vh;
+}
+
+/* Header */
+.game-header {
+  text-align: center;
+  padding: 30px 0 20px;
+}
+
+.garden-icon {
+  font-size: 52px;
+  margin-bottom: 8px;
+  display: block;
+  animation: gentleBounce 3s ease-in-out infinite;
+}
+
+@keyframes gentleBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.game-header h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--deep-plum);
+  letter-spacing: 0.5px;
+}
+
+.game-header .subtitle {
+  font-size: 1rem;
+  color: var(--text-light);
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+/* Progress Bar */
+.progress-wrapper {
+  margin: 20px 0 28px;
+}
+
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+  color: var(--text-light);
+  font-weight: 600;
+}
+
+.progress-bar-bg {
+  height: 10px;
+  background: rgba(184,169,201,0.2);
+  border-radius: 20px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--lavender), var(--rose), var(--gold));
+  border-radius: 20px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.progress-bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 20px; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4));
+  border-radius: 20px;
+}
+
+/* Screen containers */
+.screen {
+  display: none;
+  animation: fadeSlideIn 0.5s ease-out;
+}
+
+.screen.active {
+  display: block;
+}
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Card styles */
+.game-card {
+  background: white;
+  border-radius: 24px;
+  padding: 36px 28px;
+  box-shadow:
+    0 2px 8px rgba(92,61,94,0.06),
+    0 12px 40px rgba(92,61,94,0.08);
+  border: 1px solid rgba(184,169,201,0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.game-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--rose), var(--lavender), var(--sage));
+}
+
+.card-icon {
+  font-size: 44px;
+  text-align: center;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.card-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
+  font-weight: 600;
+  text-align: center;
+  color: var(--deep-plum);
+  margin-bottom: 8px;
+}
+
+.card-description {
+  text-align: center;
+  color: var(--text-light);
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+/* Buttons */
+.btn {
+  display: block;
+  width: 100%;
+  padding: 16px 24px;
+  border: none;
+  border-radius: 16px;
+  font-family: 'Quicksand', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  letter-spacing: 0.3px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--deep-plum), #7B5A7D);
+  color: white;
+  box-shadow: 0 4px 16px rgba(92,61,94,0.25);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(92,61,94,0.35);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  background: rgba(184,169,201,0.15);
+  color: var(--deep-plum);
+  border: 2px solid rgba(184,169,201,0.3);
+}
+
+.btn-secondary:hover {
+  background: rgba(184,169,201,0.25);
+}
+
+.btn + .btn { margin-top: 12px; }
+
+/* Word display for memory challenge */
+.word-display {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin: 24px 0;
+  flex-wrap: wrap;
+}
+
+.word-chip {
+  background: linear-gradient(135deg, var(--lavender-light), #EDE6F5);
+  padding: 14px 24px;
+  border-radius: 50px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--deep-plum);
+  border: 2px solid var(--lavender);
+  animation: popIn 0.4s ease-out backwards;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.word-chip:nth-child(1) { animation-delay: 0.1s; }
+.word-chip:nth-child(2) { animation-delay: 0.25s; }
+.word-chip:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes popIn {
+  from { transform: scale(0.7); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.word-emoji {
+  font-size: 1.3rem;
+}
+
+/* Temporal orientation - styled as fun quiz */
+.quiz-question {
+  margin-bottom: 24px;
+}
+
+.quiz-label {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--deep-plum);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.quiz-input {
+  width: 100%;
+  padding: 14px 18px;
+  border: 2px solid rgba(184,169,201,0.3);
+  border-radius: 14px;
+  font-family: 'Quicksand', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+  background: rgba(255,248,240,0.6);
+  transition: all 0.25s ease;
+  outline: none;
+}
+
+.quiz-input:focus {
+  border-color: var(--lavender);
+  background: white;
+  box-shadow: 0 0 0 4px rgba(184,169,201,0.15);
+}
+
+.quiz-input::placeholder {
+  color: #C4B0B0;
+  font-weight: 500;
+}
+
+select.quiz-input {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%235C3D5E'%3E%3Cpath d='M8 11.5l-5-5h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  padding-right: 44px;
+}
+
+/* Recall section buttons */
+.recall-word-section {
+  margin-bottom: 20px;
+  padding: 18px;
+  background: rgba(255,248,240,0.6);
+  border-radius: 16px;
+  border: 1px solid rgba(184,169,201,0.15);
+}
+
+.recall-word-label {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--deep-plum);
+  margin-bottom: 10px;
+}
+
+.recall-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.recall-option {
+  padding: 12px 16px;
+  border: 2px solid rgba(184,169,201,0.25);
+  border-radius: 12px;
+  background: white;
+  font-family: 'Quicksand', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.recall-option:hover {
+  border-color: var(--lavender);
+  background: rgba(184,169,201,0.08);
+}
+
+.recall-option.selected {
+  border-color: var(--sage);
+  background: var(--sage-light);
+  color: #3D5E40;
+}
+
+/* Results */
+.result-score-circle {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  margin: 0 auto 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 4px solid;
+  position: relative;
+}
+
+.result-score-circle.intact {
+  background: linear-gradient(135deg, #E8F5E9, #C8E6C9);
+  border-color: var(--sage);
+}
+
+.result-score-circle.moderate {
+  background: linear-gradient(135deg, var(--gold-light), #F5E6C8);
+  border-color: var(--gold);
+}
+
+.result-score-circle.severe {
+  background: linear-gradient(135deg, var(--rose-light), #F5C8C8);
+  border-color: var(--rose);
+}
+
+.result-number {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.8rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.result-out-of {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-light);
+  margin-top: 2px;
+}
+
+.result-category {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+.result-explanation {
+  text-align: center;
+  color: var(--text-light);
+  line-height: 1.6;
+  margin-bottom: 24px;
+  font-size: 0.95rem;
+}
+
+/* Score breakdown */
+.score-breakdown {
+  margin: 20px 0;
+  padding: 20px;
+  background: rgba(255,248,240,0.8);
+  border-radius: 16px;
+  border: 1px solid rgba(184,169,201,0.15);
+}
+
+.score-breakdown h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem;
+  color: var(--deep-plum);
+  margin-bottom: 14px;
+  text-align: center;
+}
+
+.score-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(184,169,201,0.12);
+}
+
+.score-row:last-child { border-bottom: none; }
+
+.score-row-label {
+  font-weight: 600;
+  font-size: 0.92rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.score-row-value {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--deep-plum);
+  background: var(--lavender-light);
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+/* Admin section (hidden toggle) */
+.admin-toggle {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.admin-link {
+  font-size: 0.8rem;
+  color: var(--text-light);
+  text-decoration: none;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+.admin-link:hover { opacity: 1; }
+
+.admin-panel {
+  display: none;
+  margin-top: 16px;
+  padding: 20px;
+  background: #F5F0F8;
+  border-radius: 16px;
+  border: 1px dashed var(--lavender);
+  font-size: 0.88rem;
+}
+
+.admin-panel.visible { display: block; }
+
+.admin-panel h4 {
+  font-family: 'Playfair Display', serif;
+  color: var(--deep-plum);
+  margin-bottom: 10px;
+}
+
+.admin-panel table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-panel td, .admin-panel th {
+  padding: 6px 10px;
+  text-align: left;
+  border-bottom: 1px solid rgba(184,169,201,0.2);
+  font-size: 0.85rem;
+}
+
+.admin-panel th {
+  font-weight: 700;
+  color: var(--deep-plum);
+}
+
+/* Decorative flowers */
+.floating-flowers {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.flower {
+  position: absolute;
+  font-size: 24px;
+  opacity: 0.12;
+  animation: floatAround 20s ease-in-out infinite;
+}
+
+.flower:nth-child(1) { top: 10%; left: 5%; animation-delay: 0s; }
+.flower:nth-child(2) { top: 30%; right: 8%; animation-delay: -5s; font-size: 20px; }
+.flower:nth-child(3) { bottom: 20%; left: 10%; animation-delay: -10s; font-size: 28px; }
+.flower:nth-child(4) { top: 60%; right: 5%; animation-delay: -15s; font-size: 18px; }
+.flower:nth-child(5) { bottom: 10%; right: 15%; animation-delay: -3s; }
+.flower:nth-child(6) { top: 5%; right: 30%; animation-delay: -8s; font-size: 22px; }
+
+@keyframes floatAround {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(10px, -15px) rotate(5deg); }
+  50% { transform: translate(-5px, -8px) rotate(-3deg); }
+  75% { transform: translate(8px, 5px) rotate(4deg); }
+}
+
+/* Patient info section */
+.patient-field {
+  margin-bottom: 16px;
+}
+
+.patient-field label {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--deep-plum);
+  margin-bottom: 6px;
+  display: block;
+}
+
+/* Countdown timer */
+.countdown-display {
+  text-align: center;
+  margin: 20px 0;
+}
+
+.countdown-number {
+  font-family: 'Playfair Display', serif;
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--deep-plum);
+}
+
+.countdown-label {
+  font-size: 0.9rem;
+  color: var(--text-light);
+  font-weight: 600;
+}
+
+/* Animations for transitions */
+.sparkle {
+  display: inline-block;
+  animation: sparkle 1.5s ease-in-out infinite;
+}
+
+@keyframes sparkle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Print styles */
+@media print {
+  .floating-flowers, .btn, .progress-wrapper, .game-header { display: none; }
+  .admin-panel { display: block !important; border: 1px solid #ccc; }
+  .game-card { box-shadow: none; border: 1px solid #ddd; }
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .app-container { padding: 16px 14px; }
+  .game-card { padding: 28px 20px; }
+  .game-header h1 { font-size: 1.8rem; }
+  .word-chip { padding: 10px 18px; font-size: 1.05rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="floating-flowers">
+  <div class="flower">🌸</div>
+  <div class="flower">🌷</div>
+  <div class="flower">🌺</div>
+  <div class="flower">🦋</div>
+  <div class="flower">🌻</div>
+  <div class="flower">🌼</div>
+</div>
+
+<div class="app-container">
+  <header class="game-header">
+    <span class="garden-icon">🌿</span>
+    <h1>Memory Garden</h1>
+    <p class="subtitle">A Little Brain Bloom Game</p>
+  </header>
+
+  <div class="progress-wrapper" id="progressWrapper" style="display:none;">
+    <div class="progress-label">
+      <span id="progressStage">Getting Started</span>
+      <span id="progressPercent">0%</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="progressFill" style="width: 0%"></div>
+    </div>
+  </div>
+
+  <!-- SCREEN 0: Welcome -->
+  <div class="screen active" id="screen-welcome">
+    <div class="game-card">
+      <span class="card-icon">🌱</span>
+      <h2 class="card-title">Welcome to Memory Garden!</h2>
+      <p class="card-description">
+        Let's play a quick and fun brain game! We'll test your memory with some words, 
+        ask a few questions about today, and then see how many words you can remember. 
+        It only takes a few minutes! 🌟
+      </p>
+
+      <div class="patient-field">
+        <label for="patientName">Your name (so we can cheer you on!)</label>
+        <input type="text" id="patientName" class="quiz-input" placeholder="Enter your name...">
+      </div>
+
+      <button class="btn btn-primary" onclick="startGame()">
+        🌸 Let's Play!
+      </button>
+    </div>
+  </div>
+
+  <!-- SCREEN 1: Immediate Recall - Introduce Words -->
+  <div class="screen" id="screen-words-intro">
+    <div class="game-card">
+      <span class="card-icon">🧠</span>
+      <h2 class="card-title">Round 1: Remember These!</h2>
+      <p class="card-description">
+        I'm going to show you <strong>three special words</strong>. 
+        Try to remember them — we'll ask about them later!
+      </p>
+      <div class="word-display" id="wordDisplay">
+        <!-- Words will be inserted here -->
+      </div>
+      <p class="card-description" style="margin-bottom:16px; font-size:0.9rem; color: var(--rose);">
+        Take a good look! 👆 Remember these three words.
+      </p>
+      <button class="btn btn-primary" onclick="goToRepeat()">
+        ✨ I've Got Them — Next!
+      </button>
+    </div>
+  </div>
+
+  <!-- SCREEN 2: Immediate Recall - Repeat Words -->
+  <div class="screen" id="screen-words-repeat">
+    <div class="game-card">
+      <span class="card-icon">🗣️</span>
+      <h2 class="card-title">Now Repeat Them!</h2>
+      <p class="card-description">
+        Type the three words you just saw, separated by commas. 
+        Don't worry about the order!
+      </p>
+      <div class="quiz-question">
+        <label class="quiz-label">🌸 What were the three words?</label>
+        <input type="text" id="repeatInput" class="quiz-input" placeholder="e.g. sock, blue, bed" autocomplete="off">
+      </div>
+      <p id="repeatHint" style="display:none; text-align:center; color:var(--rose); font-size:0.9rem; margin-bottom:12px; font-weight:600;"></p>
+      <button class="btn btn-primary" onclick="checkRepeat()">
+        Check My Answer 🌟
+      </button>
+    </div>
+  </div>
+
+  <!-- SCREEN 3: Cue Reminder (shown after repeat, before orientation) -->
+  <div class="screen" id="screen-cue-reminder">
+    <div class="game-card">
+      <span class="card-icon">💡</span>
+      <h2 class="card-title">Great Job!</h2>
+      <p class="card-description" id="cueText">
+        <!-- Dynamic text -->
+      </p>
+      <div class="word-display" id="cueWordDisplay">
+        <!-- Words with cues -->
+      </div>
+      <p class="card-description" style="font-size:0.9rem; color: var(--sage);">
+        Keep these in mind — we'll come back to them at the end! 😊
+      </p>
+      <button class="btn btn-primary" onclick="goToOrientation()">
+        On to Round 2! 🎯
+      </button>
+    </div>
+  </div>
+
+  <!-- SCREEN 4: Temporal Orientation -->
+  <div class="screen" id="screen-orientation">
+    <div class="game-card">
+      <span class="card-icon">📅</span>
+      <h2 class="card-title">Round 2: Today's Date Quiz</h2>
+      <p class="card-description">
+        Let's see how in-the-know you are about today! No peeking at your phone 😄
+      </p>
+
+      <div class="quiz-question">
+        <label class="quiz-label">🗓️ What year is it right now?</label>
+        <input type="text" id="answerYear" class="quiz-input" placeholder="e.g. 2026" inputmode="numeric" autocomplete="off">
+      </div>
+
+      <div class="quiz-question">
+        <label class="quiz-label">🌷 What month are we in?</label>
+        <select id="answerMonth" class="quiz-input">
+          <option value="">Pick the month...</option>
+          <option value="1">January</option>
+          <option value="2">February</option>
+          <option value="3">March</option>
+          <option value="4">April</option>
+          <option value="5">May</option>
+          <option value="6">June</option>
+          <option value="7">July</option>
+          <option value="8">August</option>
+          <option value="9">September</option>
+          <option value="10">October</option>
+          <option value="11">November</option>
+          <option value="12">December</option>
+        </select>
+      </div>
+
+      <div class="quiz-question">
+        <label class="quiz-label">☀️ What day of the week is it?</label>
+        <select id="answerDay" class="quiz-input">
+          <option value="">Pick the day...</option>
+          <option value="Sunday">Sunday</option>
+          <option value="Monday">Monday</option>
+          <option value="Tuesday">Tuesday</option>
+          <option value="Wednesday">Wednesday</option>
+          <option value="Thursday">Thursday</option>
+          <option value="Friday">Friday</option>
+          <option value="Saturday">Saturday</option>
+        </select>
+      </div>
+
+      <button class="btn btn-primary" onclick="submitOrientation()">
+        Submit Answers 🌻
+      </button>
+    </div>
+  </div>
+
+  <!-- SCREEN 5: Recall -->
+  <div class="screen" id="screen-recall">
+    <div class="game-card">
+      <span class="card-icon">🔮</span>
+      <h2 class="card-title">Final Round: Word Recall!</h2>
+      <p class="card-description">
+        Remember those three words from the beginning? 
+        Let's see how many stuck! For each word, tell us if you remember it.
+      </p>
+
+      <div id="recallContainer">
+        <!-- Dynamically built -->
+      </div>
+
+      <button class="btn btn-primary" onclick="submitRecall()">
+        See My Garden Score! 🌈
+      </button>
+    </div>
+  </div>
+
+  <!-- SCREEN 6: Results -->
+  <div class="screen" id="screen-results">
+    <div class="game-card">
+      <span class="card-icon">🏆</span>
+      <h2 class="card-title" id="resultsTitle">Your Garden Score</h2>
+      <div id="resultsContent">
+        <!-- Dynamic -->
+      </div>
+
+      <div class="admin-toggle">
+        <a class="admin-link" onclick="toggleAdmin()">📋 Clinical Details</a>
+      </div>
+      <div class="admin-panel" id="adminPanel">
+        <!-- Clinical scoring details -->
+      </div>
+
+      <button class="btn btn-primary" style="margin-top: 20px;" onclick="printResults()">
+        🖨️ Print Results
+      </button>
+      <button class="btn btn-secondary" onclick="resetGame()">
+        🔄 Play Again
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== BIMS LOGIC ====================
+
+// Standard BIMS words (CMS specified)
+const BIMS_WORDS = [
+  { word: 'sock', cue: 'something to wear', emoji: '🧦' },
+  { word: 'blue', cue: 'a color', emoji: '💙' },
+  { word: 'bed', cue: 'a piece of furniture', emoji: '🛏️' }
+];
+
+// State
+let state = {
+  patientName: '',
+  startTime: null,
+  // Immediate Recall (C0200) - max 3 pts
+  immediateRecallScore: 0,
+  immediateRecallAttempts: 0,
+  wordsRepeated: [],
+  // Temporal Orientation (C0300) - max 6 pts
+  yearScore: 0,  // 0-3
+  monthScore: 0, // 0-2
+  dayScore: 0,   // 0-1
+  yearAnswer: '',
+  monthAnswer: '',
+  dayAnswer: '',
+  // Recall (C0400) - max 6 pts
+  recallScores: [0, 0, 0], // 0-2 each
+  recallAnswers: [],
+  // Totals
+  totalScore: 0
+};
+
+function getPlayerName() {
+  return state.patientName || 'Friend';
+}
+
+function updateProgress(stage, percent) {
+  document.getElementById('progressWrapper').style.display = 'block';
+  document.getElementById('progressStage').textContent = stage;
+  document.getElementById('progressPercent').textContent = percent + '%';
+  document.getElementById('progressFill').style.width = percent + '%';
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const screen = document.getElementById(id);
+  screen.classList.add('active');
+  // Re-trigger animation
+  screen.style.animation = 'none';
+  screen.offsetHeight;
+  screen.style.animation = '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ---- SCREEN 0: Start ----
+function startGame() {
+  state.patientName = document.getElementById('patientName').value.trim();
+  state.startTime = new Date();
+  
+  // Show words
+  const wordDisplay = document.getElementById('wordDisplay');
+  wordDisplay.innerHTML = BIMS_WORDS.map(w =>
+    `<div class="word-chip"><span class="word-emoji">${w.emoji}</span> ${w.word.charAt(0).toUpperCase() + w.word.slice(1)}</div>`
+  ).join('');
+  
+  updateProgress('Round 1: Memory Words', 15);
+  showScreen('screen-words-intro');
+}
+
+// ---- SCREEN 1 → 2: Repeat ----
+function goToRepeat() {
+  updateProgress('Round 1: Repeat Words', 25);
+  showScreen('screen-words-repeat');
+  document.getElementById('repeatInput').focus();
+}
+
+function checkRepeat() {
+  const input = document.getElementById('repeatInput').value.toLowerCase().trim();
+  const words = input.split(/[\s,;]+/).map(w => w.trim().toLowerCase()).filter(Boolean);
+  
+  let score = 0;
+  let matched = [];
+  BIMS_WORDS.forEach(bw => {
+    if (words.includes(bw.word)) {
+      score++;
+      matched.push(bw.word);
+    }
+  });
+  
+  state.immediateRecallScore = score;
+  state.immediateRecallAttempts++;
+  state.wordsRepeated = matched;
+  
+  // Build cue screen
+  let cueText = '';
+  if (score === 3) {
+    cueText = `Wonderful, ${getPlayerName()}! You got all three words! 🎉 Here they are again with little hints to help you remember:`;
+  } else if (score > 0) {
+    cueText = `Nice try, ${getPlayerName()}! You got ${score} out of 3. Here are the words again with hints to help you remember:`;
+  } else {
+    cueText = `No worries, ${getPlayerName()}! Here are the three words again with helpful hints:`;
+  }
+  
+  document.getElementById('cueText').innerHTML = cueText;
+  document.getElementById('cueWordDisplay').innerHTML = BIMS_WORDS.map(w =>
+    `<div class="word-chip">
+      <span class="word-emoji">${w.emoji}</span>
+      <span><strong>${w.word.charAt(0).toUpperCase() + w.word.slice(1)}</strong><br><small style="color:var(--text-light)">${w.cue}</small></span>
+    </div>`
+  ).join('');
+  
+  updateProgress('Round 1: Review', 35);
+  showScreen('screen-cue-reminder');
+}
+
+// ---- SCREEN 3 → 4: Orientation ----
+function goToOrientation() {
+  updateProgress('Round 2: Date Quiz', 50);
+  showScreen('screen-orientation');
+}
+
+function submitOrientation() {
+  const now = new Date();
+  const actualYear = now.getFullYear();
+  const actualMonth = now.getMonth() + 1; // 1-12
+  const actualDay = now.toLocaleDateString('en-US', { weekday: 'long' });
+  
+  // Year scoring (C0300A): 3 = correct, 2 = off by 1, 1 = off by 2-5, 0 = off by >5
+  const enteredYear = parseInt(document.getElementById('answerYear').value);
+  state.yearAnswer = document.getElementById('answerYear').value;
+  if (!isNaN(enteredYear)) {
+    const yearDiff = Math.abs(enteredYear - actualYear);
+    if (yearDiff === 0) state.yearScore = 3;
+    else if (yearDiff === 1) state.yearScore = 2;
+    else if (yearDiff <= 5) state.yearScore = 1;
+    else state.yearScore = 0;
+  } else {
+    state.yearScore = 0;
+  }
+  
+  // Month scoring (C0300B): 2 = within 5 days, 1 = within 1 month, 0 = otherwise
+  const enteredMonth = parseInt(document.getElementById('answerMonth').value);
+  state.monthAnswer = document.getElementById('answerMonth').value;
+  if (enteredMonth) {
+    // Calculate how far off in "days" roughly
+    const monthDiff = Math.abs(enteredMonth - actualMonth);
+    const dayOfMonth = now.getDate();
+    
+    if (enteredMonth === actualMonth) {
+      state.monthScore = 2; // Correct month = within 5 days
+    } else if (monthDiff === 1) {
+      // If within ~5 days of month boundary
+      if ((enteredMonth === actualMonth - 1 && dayOfMonth <= 5) ||
+          (enteredMonth === actualMonth + 1 && dayOfMonth >= 26)) {
+        state.monthScore = 2; // within 5 days
+      } else {
+        state.monthScore = 1; // within 1 month
+      }
+    } else {
+      state.monthScore = 0;
+    }
+  } else {
+    state.monthScore = 0;
+  }
+  
+  // Day scoring (C0300C): 1 = correct, 0 = incorrect
+  const enteredDay = document.getElementById('answerDay').value;
+  state.dayAnswer = enteredDay;
+  state.dayScore = (enteredDay === actualDay) ? 1 : 0;
+  
+  // Now go to recall
+  buildRecallScreen();
+  updateProgress('Final Round: Word Recall', 70);
+  showScreen('screen-recall');
+}
+
+// ---- SCREEN 5: Recall ----
+function buildRecallScreen() {
+  const container = document.getElementById('recallContainer');
+  container.innerHTML = BIMS_WORDS.map((w, i) => `
+    <div class="recall-word-section" data-index="${i}">
+      <div class="recall-word-label">
+        ${w.emoji} Word ${i + 1}: Do you remember it?
+      </div>
+      <div class="recall-options">
+        <button class="recall-option" onclick="selectRecall(${i}, 'remembered', this)" data-value="remembered">
+          ✅ Yes! I remember — it's "<span class="recall-answer-slot" id="recallSlot${i}">___</span>"
+        </button>
+        <button class="recall-option" onclick="selectRecall(${i}, 'hint', this)" data-value="hint">
+          💡 Give me a hint! (${w.cue})
+        </button>
+        <button class="recall-option" onclick="selectRecall(${i}, 'forgot', this)" data-value="forgot">
+          😅 I can't remember this one
+        </button>
+      </div>
+      <div id="recallInput${i}" style="display:none; margin-top: 10px;">
+        <input type="text" class="quiz-input recall-typed" placeholder="Type the word..." autocomplete="off" data-index="${i}">
+      </div>
+    </div>
+  `).join('');
+}
+
+function selectRecall(index, type, btn) {
+  const section = btn.closest('.recall-word-section');
+  section.querySelectorAll('.recall-option').forEach(o => o.classList.remove('selected'));
+  btn.classList.add('selected');
+  
+  const inputDiv = document.getElementById(`recallInput${index}`);
+  
+  if (type === 'remembered') {
+    inputDiv.style.display = 'block';
+    inputDiv.querySelector('input').focus();
+    inputDiv.querySelector('input').placeholder = `Type the word you remember...`;
+  } else if (type === 'hint') {
+    // Show the cue, then ask for the word
+    inputDiv.style.display = 'block';
+    inputDiv.querySelector('input').placeholder = `It's ${BIMS_WORDS[index].cue} — what was the word?`;
+    inputDiv.querySelector('input').focus();
+  } else {
+    inputDiv.style.display = 'none';
+  }
+}
+
+function submitRecall() {
+  // Score each word's recall
+  BIMS_WORDS.forEach((w, i) => {
+    const section = document.querySelector(`.recall-word-section[data-index="${i}"]`);
+    const selected = section.querySelector('.recall-option.selected');
+    const inputEl = document.querySelector(`#recallInput${i} input`);
+    const typedWord = inputEl ? inputEl.value.toLowerCase().trim() : '';
+    
+    if (!selected) {
+      state.recallScores[i] = 0;
+      state.recallAnswers[i] = { type: 'no_answer', typed: '' };
+      return;
+    }
+    
+    const type = selected.dataset.value;
+    
+    if (type === 'remembered' && typedWord === w.word) {
+      state.recallScores[i] = 2; // Recalled without cue
+      state.recallAnswers[i] = { type: 'no_cue', typed: typedWord };
+    } else if (type === 'hint' && typedWord === w.word) {
+      state.recallScores[i] = 1; // Recalled with cue
+      state.recallAnswers[i] = { type: 'with_cue', typed: typedWord };
+    } else if (type === 'remembered' && typedWord && typedWord !== w.word) {
+      state.recallScores[i] = 0; // Wrong word
+      state.recallAnswers[i] = { type: 'incorrect', typed: typedWord };
+    } else if (type === 'hint' && typedWord && typedWord !== w.word) {
+      state.recallScores[i] = 0; // Wrong even with cue
+      state.recallAnswers[i] = { type: 'incorrect_with_cue', typed: typedWord };
+    } else {
+      state.recallScores[i] = 0;
+      state.recallAnswers[i] = { type: 'not_recalled', typed: typedWord };
+    }
+  });
+  
+  calculateAndShowResults();
+}
+
+// ---- SCREEN 6: Results ----
+function calculateAndShowResults() {
+  const immediateRecall = state.immediateRecallScore; // 0-3
+  const orientation = state.yearScore + state.monthScore + state.dayScore; // 0-6
+  const recall = state.recallScores.reduce((a, b) => a + b, 0); // 0-6
+  state.totalScore = immediateRecall + orientation + recall;
+  
+  let category, categoryColor, explanation, emoji;
+  if (state.totalScore >= 13) {
+    category = 'Blooming Brilliantly! 🌸';
+    categoryColor = 'intact';
+    explanation = `Amazing, ${getPlayerName()}! Your memory garden is flourishing beautifully. Your mind is sharp and your recall is excellent!`;
+    emoji = '🌸';
+  } else if (state.totalScore >= 8) {
+    category = 'Growing Nicely! 🌱';
+    categoryColor = 'moderate';
+    explanation = `Good effort, ${getPlayerName()}! Your garden has some lovely blooms. A few areas might benefit from a little extra nourishment and care.`;
+    emoji = '🌱';
+  } else {
+    category = 'Time to Tend the Garden 🌻';
+    categoryColor = 'severe';
+    explanation = `Thank you for playing, ${getPlayerName()}! Your garden could use some extra sunshine and attention. It might be helpful to chat with your care team about keeping your mind active.`;
+    emoji = '🌻';
+  }
+  
+  const resultsContent = document.getElementById('resultsContent');
+  resultsContent.innerHTML = `
+    <div class="result-score-circle ${categoryColor}">
+      <div class="result-number">${state.totalScore}</div>
+      <div class="result-out-of">out of 15</div>
+    </div>
+    <div class="result-category">${category}</div>
+    <p class="result-explanation">${explanation}</p>
+    
+    <div class="score-breakdown">
+      <h3>Your Score Breakdown</h3>
+      <div class="score-row">
+        <span class="score-row-label">🧠 Word Memory (Repeat)</span>
+        <span class="score-row-value">${immediateRecall} / 3</span>
+      </div>
+      <div class="score-row">
+        <span class="score-row-label">📅 Date Quiz</span>
+        <span class="score-row-value">${orientation} / 6</span>
+      </div>
+      <div class="score-row">
+        <span class="score-row-label">🔮 Word Recall</span>
+        <span class="score-row-value">${recall} / 6</span>
+      </div>
+      <div class="score-row" style="border-top: 2px solid var(--lavender); padding-top: 12px;">
+        <span class="score-row-label" style="font-size: 1.05rem;"><strong>🌿 Total Garden Score</strong></span>
+        <span class="score-row-value" style="font-size: 1.1rem; background: var(--deep-plum); color: white;">${state.totalScore} / 15</span>
+      </div>
+    </div>
+  `;
+  
+  // Build admin/clinical panel
+  const now = new Date();
+  const adminPanel = document.getElementById('adminPanel');
+  adminPanel.innerHTML = `
+    <h4>BIMS Clinical Scoring (Section C — MDS 3.0)</h4>
+    <p style="margin-bottom:10px; color:var(--text-light); font-size:0.82rem;">
+      Patient: <strong>${state.patientName || 'N/A'}</strong> &nbsp;|&nbsp; 
+      Date: <strong>${now.toLocaleDateString()}</strong> &nbsp;|&nbsp;
+      Time: <strong>${now.toLocaleTimeString()}</strong>
+    </p>
+    <table>
+      <tr><th>Section</th><th>Item</th><th>Response</th><th>Score</th></tr>
+      <tr>
+        <td rowspan="3"><strong>C0200</strong><br>Immediate Recall</td>
+        <td>Sock</td>
+        <td>${state.wordsRepeated.includes('sock') ? 'Correct' : 'Incorrect'}</td>
+        <td>${state.wordsRepeated.includes('sock') ? 1 : 0}</td>
+      </tr>
+      <tr>
+        <td>Blue</td>
+        <td>${state.wordsRepeated.includes('blue') ? 'Correct' : 'Incorrect'}</td>
+        <td>${state.wordsRepeated.includes('blue') ? 1 : 0}</td>
+      </tr>
+      <tr>
+        <td>Bed</td>
+        <td>${state.wordsRepeated.includes('bed') ? 'Correct' : 'Incorrect'}</td>
+        <td>${state.wordsRepeated.includes('bed') ? 1 : 0}</td>
+      </tr>
+      <tr>
+        <td rowspan="3"><strong>C0300</strong><br>Temporal Orientation</td>
+        <td>Year (Actual: ${now.getFullYear()})</td>
+        <td>Answered: ${state.yearAnswer || 'No answer'}</td>
+        <td>${state.yearScore} / 3</td>
+      </tr>
+      <tr>
+        <td>Month (Actual: ${now.toLocaleString('default', {month:'long'})})</td>
+        <td>Answered: ${state.monthAnswer ? new Date(2000, state.monthAnswer - 1).toLocaleString('default', {month:'long'}) : 'No answer'}</td>
+        <td>${state.monthScore} / 2</td>
+      </tr>
+      <tr>
+        <td>Day (Actual: ${now.toLocaleDateString('en-US', {weekday:'long'})})</td>
+        <td>Answered: ${state.dayAnswer || 'No answer'}</td>
+        <td>${state.dayScore} / 1</td>
+      </tr>
+      <tr>
+        <td rowspan="3"><strong>C0400</strong><br>Recall</td>
+        <td>Sock</td>
+        <td>${formatRecallAnswer(0)}</td>
+        <td>${state.recallScores[0]} / 2</td>
+      </tr>
+      <tr>
+        <td>Blue</td>
+        <td>${formatRecallAnswer(1)}</td>
+        <td>${state.recallScores[1]} / 2</td>
+      </tr>
+      <tr>
+        <td>Bed</td>
+        <td>${formatRecallAnswer(2)}</td>
+        <td>${state.recallScores[2]} / 2</td>
+      </tr>
+    </table>
+    <div style="margin-top: 14px; padding: 12px; background: white; border-radius: 10px; border: 1px solid rgba(184,169,201,0.2);">
+      <strong>C0500 — BIMS Summary Score: ${state.totalScore} / 15</strong><br>
+      <span style="color:var(--text-light);">
+        Classification: <strong>${state.totalScore >= 13 ? 'Intact (13-15)' : state.totalScore >= 8 ? 'Moderate Impairment (8-12)' : 'Severe Impairment (0-7)'}</strong>
+      </span>
+    </div>
+  `;
+  
+  updateProgress('Complete! 🎉', 100);
+  showScreen('screen-results');
+}
+
+function formatRecallAnswer(index) {
+  const a = state.recallAnswers[index];
+  if (!a) return 'No response';
+  switch (a.type) {
+    case 'no_cue': return `Recalled without cue ("${a.typed}")`;
+    case 'with_cue': return `Recalled with cue ("${a.typed}")`;
+    case 'incorrect': return `Incorrect ("${a.typed}")`;
+    case 'incorrect_with_cue': return `Incorrect with cue ("${a.typed}")`;
+    case 'not_recalled': return 'Not recalled';
+    case 'no_answer': return 'No response';
+    default: return 'No response';
+  }
+}
+
+function toggleAdmin() {
+  document.getElementById('adminPanel').classList.toggle('visible');
+}
+
+function printResults() {
+  document.getElementById('adminPanel').classList.add('visible');
+  window.print();
+}
+
+function resetGame() {
+  state = {
+    patientName: '',
+    startTime: null,
+    immediateRecallScore: 0,
+    immediateRecallAttempts: 0,
+    wordsRepeated: [],
+    yearScore: 0,
+    monthScore: 0,
+    dayScore: 0,
+    yearAnswer: '',
+    monthAnswer: '',
+    dayAnswer: '',
+    recallScores: [0, 0, 0],
+    recallAnswers: [],
+    totalScore: 0
+  };
+  document.getElementById('patientName').value = '';
+  document.getElementById('repeatInput').value = '';
+  document.getElementById('answerYear').value = '';
+  document.getElementById('answerMonth').value = '';
+  document.getElementById('answerDay').value = '';
+  document.getElementById('progressWrapper').style.display = 'none';
+  showScreen('screen-welcome');
+}
+</script>
+</body>
+</html>

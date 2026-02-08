@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Bloom — Brain Games</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Cormorant+Garamond:ital,wght@0,500;0,700;1,500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --coral:#E8736C;--coral-soft:#F4ADA8;--teal:#5B9B8A;--teal-soft:#A8D5C8;
+  --honey:#E8B44D;--honey-soft:#F5DCA0;--plum:#7B5EA7;--plum-soft:#C4B0E0;
+  --sky:#6AABE8;--sky-soft:#A8D4F5;--cream:#FFFCF7;--blush:#FFF5F3;
+  --ink:#2D2438;--ink-light:#6B5F7A;--ink-faint:rgba(45,36,56,.06);
+  --radius:20px;--radius-sm:14px;--radius-xs:10px;
+  --safe-bottom:env(safe-area-inset-bottom,16px);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{font-family:'Nunito',sans-serif;background:var(--cream);color:var(--ink);min-height:100vh;min-height:100dvh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+.game-active{user-select:none;-webkit-user-select:none}
+.app{max-width:430px;margin:0 auto;min-height:100vh;min-height:100dvh;position:relative;background:var(--cream)}
+.ambient{position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse at 20% 10%,rgba(232,115,108,.07) 0%,transparent 50%),radial-gradient(ellipse at 80% 90%,rgba(91,155,138,.07) 0%,transparent 50%),radial-gradient(ellipse at 50% 50%,rgba(232,180,77,.04) 0%,transparent 60%)}
+.screen{display:none;position:relative;z-index:1;padding:20px 16px;padding-bottom:calc(20px + var(--safe-bottom));animation:screenIn .4s ease-out}
+.screen.active{display:block}
+@keyframes screenIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* SHARED COMPONENTS */
+.card-panel{background:#fff;border-radius:var(--radius);padding:24px 20px;box-shadow:0 2px 12px rgba(45,36,56,.06);margin-bottom:14px}
+.card-panel h2{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:700;margin-bottom:10px;text-align:center}
+
+/* BUTTONS */
+.btn-game{display:block;width:100%;padding:14px;border:none;border-radius:var(--radius-sm);font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;margin-top:10px;transition:transform .15s}
+.btn-game:active{transform:scale(.97)}
+.btn-coral{background:var(--coral);color:#fff;box-shadow:0 4px 12px rgba(232,115,108,.3)}
+.btn-teal{background:var(--teal);color:#fff;box-shadow:0 4px 12px rgba(91,155,138,.3)}
+.btn-plum{background:var(--plum);color:#fff;box-shadow:0 4px 12px rgba(123,94,167,.3)}
+.btn-honey{background:var(--honey);color:#fff;box-shadow:0 4px 12px rgba(232,180,77,.3)}
+.btn-ghost{background:rgba(45,36,56,.06);color:var(--ink)}
+.btn-sm{padding:10px 16px;font-size:.88rem;width:auto;display:inline-block;margin:4px}
+
+/* INPUTS */
+.field{margin-bottom:14px}
+.field label{display:block;font-weight:800;font-size:.85rem;margin-bottom:5px;color:var(--ink)}
+.field-input{width:100%;padding:13px 16px;border:2px solid rgba(45,36,56,.1);border-radius:var(--radius-sm);font-family:'Nunito',sans-serif;font-size:1rem;font-weight:700;color:var(--ink);background:var(--cream);outline:none;transition:border-color .2s,box-shadow .2s}
+.field-input:focus{border-color:var(--plum);box-shadow:0 0 0 4px rgba(123,94,167,.12)}
+.field-input::placeholder{color:#B8A8B8}
+select.field-input{appearance:none;cursor:pointer;background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%232D2438'%3E%3Cpath d='M7 10l-5-5h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
+
+/* HOME */
+.home-header{text-align:center;padding:36px 0 16px}
+.bloom-logo{font-size:52px;display:block;margin-bottom:4px;animation:gFloat 4s ease-in-out infinite}
+@keyframes gFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.home-header h1{font-family:'Cormorant Garamond',serif;font-size:2.6rem;font-weight:700;letter-spacing:1px;line-height:1}
+.home-header .tagline{font-size:.95rem;color:var(--ink-light);font-weight:600;margin-top:4px}
+
+/* Player banner */
+.player-banner{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:linear-gradient(135deg,var(--plum-soft),#DDD2F0);border-radius:var(--radius-sm);margin-bottom:12px;border:2px solid rgba(123,94,167,.2)}
+.player-name{font-weight:800;font-size:.95rem;color:var(--ink)}
+.player-name span{font-size:.78rem;color:var(--ink-light);font-weight:600;display:block}
+.player-switch{font-size:.78rem;font-weight:800;color:var(--plum);cursor:pointer;text-decoration:underline;background:none;border:none;font-family:'Nunito',sans-serif}
+
+/* Game tiles */
+.game-grid{display:flex;flex-direction:column;gap:12px;margin-top:8px}
+.game-tile{position:relative;border-radius:var(--radius);padding:20px 18px;cursor:pointer;border:none;text-align:left;font-family:'Nunito',sans-serif;transition:transform .2s;overflow:hidden;display:flex;align-items:center;gap:14px;-webkit-appearance:none;width:100%}
+.game-tile:active{transform:scale(.97)}
+.game-tile-icon{font-size:2.2rem;width:52px;height:52px;display:flex;align-items:center;justify-content:center;border-radius:14px;flex-shrink:0}
+.game-tile-info h3{font-size:1.05rem;font-weight:800;margin-bottom:1px}
+.game-tile-info p{font-size:.8rem;font-weight:600;opacity:.7;line-height:1.3}
+.game-tile.bubble{background:linear-gradient(135deg,#FFF0EE,#FFE4E1);color:#8B3A35;box-shadow:0 4px 16px rgba(232,115,108,.12)}
+.game-tile.bubble .game-tile-icon{background:rgba(232,115,108,.15)}
+.game-tile.cards{background:linear-gradient(135deg,#EFF8F5,#E0F2EC);color:#2D5E4E;box-shadow:0 4px 16px rgba(91,155,138,.12)}
+.game-tile.cards .game-tile-icon{background:rgba(91,155,138,.15)}
+.game-tile.mahjong{background:linear-gradient(135deg,#F5F0FF,#EDE4FF);color:#4A3570;box-shadow:0 4px 16px rgba(123,94,167,.12)}
+.game-tile.mahjong .game-tile-icon{background:rgba(123,94,167,.15)}
+.badge{position:absolute;top:10px;right:10px;font-size:.68rem;font-weight:800;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px}
+.game-tile.bubble .badge{background:var(--coral);color:#fff}
+.game-tile.cards .badge{background:var(--teal);color:#fff}
+.game-tile.mahjong .badge{background:var(--plum);color:#fff}
+
+.settings-row{display:flex;justify-content:center;gap:16px;margin-top:16px}
+.settings-link{font-size:.82rem;color:var(--ink-light);font-weight:700;cursor:pointer;opacity:.6;transition:opacity .2s;text-decoration:none;display:flex;align-items:center;gap:4px}
+.settings-link:hover{opacity:1}
+
+/* Game topbar */
+.game-topbar{display:flex;justify-content:space-between;align-items:center;padding:8px 0 14px}
+.game-topbar-left{display:flex;align-items:center;gap:8px}
+.back-btn{width:40px;height:40px;border-radius:12px;border:2px solid rgba(45,36,56,.1);background:#fff;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.back-btn:active{background:#f0f0f0}
+.game-title-small{font-weight:800;font-size:.95rem}
+.score-pill{display:flex;align-items:center;gap:6px;background:#fff;padding:8px 14px;border-radius:50px;font-weight:800;font-size:.92rem;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.level-bar{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.level-label{font-weight:800;font-size:.8rem;color:var(--ink-light);white-space:nowrap}
+.level-track{flex:1;height:8px;background:rgba(45,36,56,.08);border-radius:20px;overflow:hidden}
+.level-fill{height:100%;border-radius:20px;transition:width .5s ease}
+.level-fill.coral{background:linear-gradient(90deg,var(--coral),var(--coral-soft))}
+.level-fill.teal{background:linear-gradient(90deg,var(--teal),var(--teal-soft))}
+.level-fill.plum{background:linear-gradient(90deg,var(--plum),var(--plum-soft))}
+.timer-display{font-weight:800;font-size:.88rem;color:var(--ink-light);display:flex;align-items:center;gap:4px}
+
+/* BUBBLE POP */
+.bubble-arena{position:relative;width:100%;aspect-ratio:1/1.15;max-height:480px;border-radius:var(--radius);background:linear-gradient(180deg,#FFF5F3,#FFE8E4);overflow:hidden;border:2px solid rgba(232,115,108,.15);touch-action:manipulation}
+.bubble{position:absolute;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .15s;animation:bRise .5s ease-out backwards;box-shadow:inset 0 -4px 12px rgba(0,0,0,.08),0 2px 8px rgba(0,0,0,.1)}
+.bubble:active{transform:scale(.9)}
+.bubble-inner{font-size:1.5rem;pointer-events:none}
+.bubble-shine{position:absolute;top:15%;left:20%;width:30%;height:20%;background:rgba(255,255,255,.5);border-radius:50%;transform:rotate(-30deg);pointer-events:none}
+@keyframes bRise{from{transform:scale(0) translateY(30px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}
+.bubble.popping{animation:bPop .3s ease-out forwards;pointer-events:none}
+@keyframes bPop{0%{transform:scale(1);opacity:1}50%{transform:scale(1.4);opacity:.5}100%{transform:scale(0);opacity:0}}
+.pop-particle{position:absolute;width:8px;height:8px;border-radius:50%;pointer-events:none;animation:pFly .5s ease-out forwards}
+@keyframes pFly{from{transform:translate(0,0) scale(1);opacity:1}to{transform:translate(var(--tx),var(--ty)) scale(0);opacity:0}}
+
+/* CARD MATCH */
+.card-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;max-width:360px;margin:0 auto}
+.match-card{aspect-ratio:3/4;border-radius:var(--radius-sm);cursor:pointer;perspective:600px}
+.match-card-inner{width:100%;height:100%;position:relative;transition:transform .5s;transform-style:preserve-3d}
+.match-card.flipped .match-card-inner,.match-card.matched .match-card-inner{transform:rotateY(180deg)}
+.match-card-face{position:absolute;width:100%;height:100%;border-radius:var(--radius-sm);backface-visibility:hidden;display:flex;align-items:center;justify-content:center;font-size:2rem}
+.match-card-back{background:linear-gradient(135deg,var(--teal),#4A8B7A);box-shadow:inset 0 2px 4px rgba(255,255,255,.2)}
+.match-card-back::after{content:'🌿';font-size:1.4rem;opacity:.4}
+.match-card-front{background:#fff;border:2px solid rgba(91,155,138,.2);transform:rotateY(180deg);font-size:2rem}
+.match-card.matched{opacity:.5;pointer-events:none;transition:opacity .4s .3s}
+
+/* MAHJONG */
+.mahjong-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;max-width:380px;margin:0 auto}
+.mah-tile{aspect-ratio:1;border-radius:var(--radius-xs);background:linear-gradient(180deg,#fff,#F5F0FF);border:2px solid rgba(123,94,167,.15);box-shadow:0 3px 0 rgba(123,94,167,.12),0 2px 8px rgba(0,0,0,.06);display:flex;align-items:center;justify-content:center;font-size:1.4rem;cursor:pointer;transition:transform .15s,border-color .2s}
+.mah-tile:active{transform:translateY(2px);box-shadow:none}
+.mah-tile.selected{border-color:var(--plum);box-shadow:0 0 0 3px rgba(123,94,167,.25);transform:translateY(-2px)}
+.mah-tile.matched-out{animation:tVanish .4s ease-out forwards}
+@keyframes tVanish{0%{transform:scale(1);opacity:1}50%{transform:scale(1.1) rotate(5deg);opacity:.5}100%{transform:scale(0);opacity:0}}
+
+/* BONUS OVERLAY */
+.bonus-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:100;background:rgba(45,36,56,.6);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);animation:fadeIn .3s ease}
+.bonus-overlay.active{display:flex;align-items:center;justify-content:center}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.bonus-card{background:#fff;border-radius:var(--radius);padding:26px 20px;margin:16px;max-width:400px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.2);text-align:center;animation:bSlide .4s ease-out;max-height:90vh;overflow-y:auto}
+@keyframes bSlide{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+.bonus-card .bonus-emoji{font-size:2.8rem;margin-bottom:6px;display:block}
+.bonus-card h2{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:700;margin-bottom:4px}
+.bonus-card p{font-size:.9rem;color:var(--ink-light);font-weight:600;line-height:1.5;margin-bottom:14px}
+.bonus-input{width:100%;padding:13px 16px;border:2px solid rgba(45,36,56,.1);border-radius:var(--radius-sm);font-family:'Nunito',sans-serif;font-size:1rem;font-weight:700;color:var(--ink);background:var(--cream);outline:none;text-align:center}
+.bonus-input:focus{border-color:var(--plum);box-shadow:0 0 0 4px rgba(123,94,167,.12)}
+.bonus-select{width:100%;padding:13px 16px;border:2px solid rgba(45,36,56,.1);border-radius:var(--radius-sm);font-family:'Nunito',sans-serif;font-size:1rem;font-weight:700;color:var(--ink);background:var(--cream);outline:none;appearance:none;cursor:pointer;background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%232D2438'%3E%3Cpath d='M7 10l-5-5h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
+.bonus-options{display:flex;flex-direction:column;gap:7px;margin:10px 0;text-align:left}
+.bonus-opt-btn{padding:11px 14px;border:2px solid rgba(45,36,56,.1);border-radius:var(--radius-sm);background:#fff;font-family:'Nunito',sans-serif;font-size:.88rem;font-weight:700;color:var(--ink);cursor:pointer;transition:all .2s;text-align:left}
+.bonus-opt-btn:active,.bonus-opt-btn.selected{border-color:var(--honey);background:var(--honey-soft);color:#6B4F12}
+
+.remember-objects{display:flex;justify-content:center;gap:8px;margin:10px 0;flex-wrap:wrap}
+.remember-chip{background:linear-gradient(135deg,var(--honey-soft),#FFF5E0);border:2px solid var(--honey);padding:9px 16px;border-radius:50px;font-weight:800;font-size:.95rem;animation:cPop .4s ease-out backwards}
+.remember-chip:nth-child(2){animation-delay:.1s}.remember-chip:nth-child(3){animation-delay:.2s}
+@keyframes cPop{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
+
+/* RESULTS */
+.results-circle{width:120px;height:120px;border-radius:50%;margin:0 auto 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;border:4px solid}
+.results-circle.great{background:linear-gradient(135deg,#E8F5E9,#C8E6C9);border-color:var(--teal)}
+.results-circle.ok{background:linear-gradient(135deg,var(--honey-soft),#FFF0D0);border-color:var(--honey)}
+.results-circle.concern{background:linear-gradient(135deg,var(--coral-soft),#FFD5D2);border-color:var(--coral)}
+.results-number{font-family:'Cormorant Garamond',serif;font-size:2.5rem;font-weight:700;line-height:1}
+.results-of{font-size:.78rem;font-weight:700;color:var(--ink-light)}
+.results-breakdown{margin:12px 0;background:var(--cream);border-radius:var(--radius-sm);padding:14px}
+.results-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;font-weight:700;font-size:.88rem}
+.results-row+.results-row{border-top:1px solid var(--ink-faint)}
+.results-val{background:var(--plum-soft);color:var(--ink);padding:3px 12px;border-radius:20px;font-size:.82rem;font-weight:800}
+.cms-badge{display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#E8F5E9,#C8E6C9);color:#2D5E4E;font-size:.7rem;font-weight:800;padding:3px 10px;border-radius:20px;border:1px solid var(--teal)}
+
+/* TREND CHART (CSS only) */
+.trend-section{margin:14px 0}
+.trend-section h3{font-size:.9rem;font-weight:800;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.trend-chart{display:flex;align-items:flex-end;gap:4px;height:100px;padding:8px 0;border-bottom:2px solid var(--ink-faint)}
+.trend-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
+.trend-bar{width:100%;max-width:32px;border-radius:6px 6px 0 0;transition:height .4s ease;min-height:4px}
+.trend-bar.great{background:var(--teal)}
+.trend-bar.ok{background:var(--honey)}
+.trend-bar.concern{background:var(--coral)}
+.trend-date{font-size:.6rem;font-weight:700;color:var(--ink-light);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.trend-score{font-size:.68rem;font-weight:800}
+.trend-empty{text-align:center;padding:20px;color:var(--ink-light);font-weight:600;font-size:.88rem}
+
+/* CLINICAL PANEL */
+.clinical-toggle{font-size:.75rem;color:var(--ink-light);cursor:pointer;opacity:.4;transition:opacity .2s;margin-top:10px;text-align:center;display:block}
+.clinical-toggle:hover{opacity:1}
+.clinical-panel{display:none;margin-top:10px;padding:14px;background:#F8F4FC;border-radius:var(--radius-sm);border:1px dashed var(--plum-soft);font-size:.78rem;text-align:left}
+.clinical-panel.visible{display:block}
+.clinical-panel table{width:100%;border-collapse:collapse}
+.clinical-panel td,.clinical-panel th{padding:3px 6px;text-align:left;border-bottom:1px solid rgba(123,94,167,.1);font-size:.76rem}
+.clinical-panel th{font-weight:800;color:var(--plum)}
+
+/* PATIENT LIST (Dashboard) */
+.patient-list{margin:8px 0}
+.patient-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#fff;border-radius:var(--radius-sm);margin-bottom:8px;border:2px solid var(--ink-faint);cursor:pointer;transition:border-color .2s}
+.patient-row:active{border-color:var(--plum-soft)}
+.patient-row-info{flex:1}
+.patient-row-name{font-weight:800;font-size:.92rem}
+.patient-row-meta{font-size:.75rem;color:var(--ink-light);font-weight:600}
+.patient-row-score{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.9rem;color:#fff;flex-shrink:0}
+.patient-row-score.great{background:var(--teal)}
+.patient-row-score.ok{background:var(--honey)}
+.patient-row-score.concern{background:var(--coral)}
+.patient-row-score.none{background:rgba(45,36,56,.15);color:var(--ink-light)}
+
+/* Print */
+.confetti-container{position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:300}
+.confetti-piece{position:absolute;animation:cFall 2s ease-out forwards}
+@keyframes cFall{0%{transform:translateY(-20px) rotate(0);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+.float-score{position:fixed;pointer-events:none;font-weight:900;font-size:1.3rem;z-index:200;animation:fUp 1s ease-out forwards}
+@keyframes fUp{0%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(-60px) scale(1.2);opacity:0}}
+
+@media(max-width:380px){.card-grid{gap:6px}.match-card-front{font-size:1.5rem}.mahjong-grid{gap:4px}.mah-tile{font-size:1.1rem}}
+@media(min-width:768px){.app{box-shadow:0 0 60px rgba(0,0,0,.08)}}
+@media print{.bonus-overlay,.ambient,.confetti-container,.btn-game,.game-topbar,.level-bar,.settings-row,.game-grid,.player-banner,.game-tile{display:none!important}.clinical-panel{display:block!important}.screen{display:block!important;padding:10px}}
+</style>
+</head>
+<body>
+<div class="ambient"></div>
+<div class="app" id="app">
+
+  <!-- PATIENT SELECT -->
+  <div class="screen active" id="screen-patient-select">
+    <div class="home-header">
+      <span class="bloom-logo">🌸</span>
+      <h1>Bloom</h1>
+      <p class="tagline">Daily Brain Games</p>
+    </div>
+    <div class="card-panel">
+      <h2>Who's Playing?</h2>
+      <p style="text-align:center;color:var(--ink-light);font-size:.88rem;font-weight:600;margin-bottom:14px">Select your name or add yourself to get started!</p>
+      <div id="knownPlayers"></div>
+      <div style="border-top:2px solid var(--ink-faint);margin:14px 0;padding-top:14px">
+        <div class="field"><label>✨ New Player</label><input type="text" class="field-input" id="newPlayerName" placeholder="First name or nickname..."></div>
+        <div class="field"><label>🏷️ ID (optional, for records)</label><input type="text" class="field-input" id="newPlayerId" placeholder="Room #, MRN, or initials..."></div>
+        <button class="btn-game btn-plum" onclick="addAndSelectPlayer()">Start Playing! 🌸</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOME -->
+  <div class="screen" id="screen-home">
+    <div class="home-header" style="padding-bottom:10px">
+      <span class="bloom-logo">🌸</span>
+      <h1>Bloom</h1>
+      <p class="tagline">Daily Brain Games</p>
+    </div>
+    <div class="player-banner">
+      <div class="player-name"><span>Playing as</span><span id="currentPlayerDisplay">—</span></div>
+      <button class="player-switch" onclick="showScreen('screen-patient-select')">Switch</button>
+    </div>
+    <div class="game-grid">
+      <button class="game-tile bubble" onclick="startGame('bubble')">
+        <div class="game-tile-icon">🫧</div>
+        <div class="game-tile-info"><h3>Bubble Pop</h3><p>Pop bubbles! Watch for special items inside.</p></div>
+        <span class="badge">Fun</span>
+      </button>
+      <button class="game-tile cards" onclick="startGame('cards')">
+        <div class="game-tile-icon">🃏</div>
+        <div class="game-tile-info"><h3>Garden Match</h3><p>Flip cards and find matching pairs.</p></div>
+        <span class="badge">Classic</span>
+      </button>
+      <button class="game-tile mahjong" onclick="startGame('mahjong')">
+        <div class="game-tile-icon">🀄</div>
+        <div class="game-tile-info"><h3>Tile Garden</h3><p>Match tiles in pairs to clear the board.</p></div>
+        <span class="badge">Zen</span>
+      </button>
+    </div>
+    <div class="settings-row">
+      <a class="settings-link" onclick="showScreen('screen-dashboard')">📊 Dashboard</a>
+      <a class="settings-link" onclick="showScreen('screen-config')">⚙️ Settings</a>
+    </div>
+  </div>
+
+  <!-- BUBBLE POP -->
+  <div class="screen" id="screen-bubble">
+    <div class="game-topbar"><div class="game-topbar-left"><button class="back-btn" onclick="goHome()">←</button><span class="game-title-small">🫧 Bubble Pop</span></div><div class="score-pill">⭐ <span id="bubbleScore">0</span></div></div>
+    <div class="level-bar"><span class="level-label" id="bubbleLevelLabel">Level 1</span><div class="level-track"><div class="level-fill coral" id="bubbleLevelFill" style="width:0%"></div></div><span class="timer-display">⏱ <span id="bubbleTimer">1:30</span></span></div>
+    <div class="bubble-arena" id="bubbleArena"></div>
+  </div>
+
+  <!-- CARD MATCH -->
+  <div class="screen" id="screen-cards">
+    <div class="game-topbar"><div class="game-topbar-left"><button class="back-btn" onclick="goHome()">←</button><span class="game-title-small">🃏 Garden Match</span></div><div class="score-pill">⭐ <span id="cardScore">0</span></div></div>
+    <div class="level-bar"><span class="level-label" id="cardLevelLabel">Level 1</span><div class="level-track"><div class="level-fill teal" id="cardLevelFill" style="width:0%"></div></div><span class="timer-display">⏱ <span id="cardTimer">2:00</span></span></div>
+    <div class="card-grid" id="cardGrid"></div>
+  </div>
+
+  <!-- MAHJONG -->
+  <div class="screen" id="screen-mahjong">
+    <div class="game-topbar"><div class="game-topbar-left"><button class="back-btn" onclick="goHome()">←</button><span class="game-title-small">🀄 Tile Garden</span></div><div class="score-pill">⭐ <span id="mahScore">0</span></div></div>
+    <div class="level-bar"><span class="level-label" id="mahLevelLabel">Level 1</span><div class="level-track"><div class="level-fill plum" id="mahLevelFill" style="width:0%"></div></div><span class="timer-display">⏱ <span id="mahTimer">2:00</span></span></div>
+    <div class="mahjong-grid" id="mahGrid"></div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="screen" id="screen-results">
+    <div style="text-align:center;padding-top:16px">
+      <span style="font-size:2.8rem;display:block;margin-bottom:6px" id="resultsEmoji">🎉</span>
+      <h2 style="font-family:'Cormorant Garamond',serif;font-size:1.7rem;font-weight:700" id="resultsTitle"></h2>
+      <p style="color:var(--ink-light);font-weight:600;margin:4px 0 8px;font-size:.88rem" id="resultsSub"></p>
+      <div id="cmsTag"></div>
+    </div>
+    <div id="resultsContent"></div>
+    <div class="trend-section" id="trendSection"></div>
+    <span class="clinical-toggle" onclick="toggleClinical()">📋 Clinical Details</span>
+    <div class="clinical-panel" id="clinicalPanel"></div>
+    <button class="btn-game btn-honey" style="margin-top:14px" onclick="goHome()">🏠 Back to Games</button>
+    <button class="btn-game btn-ghost" onclick="printClinical()">🖨️ Print Report</button>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="screen" id="screen-dashboard">
+    <div class="game-topbar"><div class="game-topbar-left"><button class="back-btn" onclick="goHome()">←</button><span class="game-title-small">📊 Dashboard</span></div></div>
+    <div class="card-panel" id="dashboardContent"></div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="screen" id="screen-config">
+    <div class="game-topbar"><div class="game-topbar-left"><button class="back-btn" onclick="goHome()">←</button><span class="game-title-small">⚙️ Settings</span></div></div>
+    <div class="card-panel">
+      <h2>Settings</h2>
+      <div class="field" style="margin-top:10px">
+        <label>🏥 Assessment Mode</label>
+        <label style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--cream);border-radius:12px;cursor:pointer;font-weight:700;font-size:.88rem;margin-top:6px">
+          <input type="checkbox" id="cmsMode" style="width:20px;height:20px;accent-color:var(--teal)">
+          Use official CMS words (sock, blue, bed)
+        </label>
+        <p style="font-size:.78rem;color:var(--ink-light);margin-top:6px;line-height:1.4;font-weight:600">When ON, uses the MDS 3.0 standard words for formal reporting. When OFF, rotates through 13,824 unique combinations.</p>
+      </div>
+      <button class="btn-game btn-plum" onclick="goHome()">Save & Back</button>
+      <button class="btn-game btn-ghost" onclick="if(confirm('Clear ALL patient data? This cannot be undone.')){clearAllData();goHome()}">🗑️ Clear All Data</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="bonus-overlay" id="bonusOverlay"><div class="bonus-card" id="bonusCard"></div></div>
+<div class="confetti-container" id="confettiContainer"></div>
+
+<script>
+// ================================================================
+// BLOOM v3 — PERSISTENT PER-PATIENT BIMS TRACKING
+// ================================================================
+
+// ===== STORAGE LAYER =====
+// Uses in-memory storage with a structure that maps patient IDs to their history
+// Data shape: { patients: { [id]: { name, patientId, scores: [{date, bimsTotal, details}] } } }
+
+let DB = { patients: {} };
+
+function saveDB() {
+  try {
+    // Try persistent storage if available
+    if (window.storage) {
+      window.storage.set('bloom-db', JSON.stringify(DB));
+    }
+  } catch(e) {}
+  // Always keep in memory
+  window._bloomDB = DB;
+}
+
+async function loadDB() {
+  try {
+    if (window.storage) {
+      const result = await window.storage.get('bloom-db');
+      if (result && result.value) {
+        DB = JSON.parse(result.value);
+        return;
+      }
+    }
+  } catch(e) {}
+  // Fallback to in-memory
+  if (window._bloomDB) DB = window._bloomDB;
+}
+
+function getPatient(id) { return DB.patients[id] || null; }
+
+function addScore(patientKey, scoreRecord) {
+  if (!DB.patients[patientKey]) return;
+  DB.patients[patientKey].scores.push(scoreRecord);
+  // Keep last 100 scores max
+  if (DB.patients[patientKey].scores.length > 100) {
+    DB.patients[patientKey].scores = DB.patients[patientKey].scores.slice(-100);
+  }
+  saveDB();
+}
+
+function clearAllData() { DB = { patients: {} }; saveDB(); }
+
+// ===== WORD LIBRARY =====
+const WEARABLES=[{word:'sock',emoji:'🧦'},{word:'hat',emoji:'🎩'},{word:'shoe',emoji:'👟'},{word:'coat',emoji:'🧥'},{word:'belt',emoji:'👔'},{word:'ring',emoji:'💍'},{word:'scarf',emoji:'🧣'},{word:'boot',emoji:'🥾'},{word:'vest',emoji:'🦺'},{word:'glove',emoji:'🧤'},{word:'dress',emoji:'👗'},{word:'crown',emoji:'👑'},{word:'cape',emoji:'🦸'},{word:'tie',emoji:'👔'},{word:'shawl',emoji:'🧶'},{word:'watch',emoji:'⌚'},{word:'bonnet',emoji:'🎀'},{word:'mitten',emoji:'🧤'},{word:'robe',emoji:'👘'},{word:'apron',emoji:'🧑‍🍳'},{word:'slipper',emoji:'🩴'},{word:'jacket',emoji:'🧥'},{word:'sandal',emoji:'👡'},{word:'sweater',emoji:'🧶'}];
+const COLORS=[{word:'blue',emoji:'💙'},{word:'red',emoji:'❤️'},{word:'green',emoji:'💚'},{word:'gold',emoji:'⭐'},{word:'pink',emoji:'🩷'},{word:'orange',emoji:'🧡'},{word:'purple',emoji:'💜'},{word:'white',emoji:'🤍'},{word:'yellow',emoji:'💛'},{word:'silver',emoji:'🩶'},{word:'peach',emoji:'🍑'},{word:'coral',emoji:'🪸'},{word:'brown',emoji:'🤎'},{word:'teal',emoji:'🩵'},{word:'violet',emoji:'💜'},{word:'rose',emoji:'🌹'},{word:'ivory',emoji:'🦴'},{word:'plum',emoji:'🍇'},{word:'tan',emoji:'🏖️'},{word:'jade',emoji:'🟢'},{word:'ruby',emoji:'♦️'},{word:'black',emoji:'🖤'},{word:'cream',emoji:'🍦'},{word:'sky',emoji:'🩵'}];
+const FURNITURE=[{word:'bed',emoji:'🛏️'},{word:'chair',emoji:'🪑'},{word:'table',emoji:'🪵'},{word:'desk',emoji:'🗄️'},{word:'lamp',emoji:'💡'},{word:'shelf',emoji:'📚'},{word:'couch',emoji:'🛋️'},{word:'stool',emoji:'🪑'},{word:'bench',emoji:'🪵'},{word:'clock',emoji:'🕰️'},{word:'mirror',emoji:'🪞'},{word:'chest',emoji:'🗃️'},{word:'rug',emoji:'🟫'},{word:'vase',emoji:'🏺'},{word:'drawer',emoji:'🗄️'},{word:'piano',emoji:'🎹'},{word:'rocker',emoji:'🪑'},{word:'trunk',emoji:'🧳'},{word:'pillow',emoji:'🛏️'},{word:'basket',emoji:'🧺'},{word:'curtain',emoji:'🪟'},{word:'candle',emoji:'🕯️'},{word:'quilt',emoji:'🛏️'},{word:'ottoman',emoji:'🛋️'}];
+const CMS_OFFICIAL=[{word:'sock',cue:'something to wear',emoji:'🧦',category:'wearable'},{word:'blue',cue:'a color',emoji:'💙',category:'color'},{word:'bed',cue:'a piece of furniture',emoji:'🛏️',category:'furniture'}];
+const GAME_EMOJIS=['🌸','🌷','🦋','🌻','🍎','🍊','🌺','🐝','🐞','🍇','🌹','🎀','🧁','🍰','☕','🫖','🎨','🎵','📚','🕯️','🧸','💐','🪻','🌾','🍓','🫐','🌴','🐚'];
+let usedCombos=new Set();
+
+function getWordSet(){
+  if(document.getElementById('cmsMode')?.checked)return CMS_OFFICIAL;
+  let attempts=0,set;
+  do{
+    const w=WEARABLES[Math.floor(Math.random()*WEARABLES.length)];
+    const c=COLORS[Math.floor(Math.random()*COLORS.length)];
+    const f=FURNITURE[Math.floor(Math.random()*FURNITURE.length)];
+    const key=`${w.word}-${c.word}-${f.word}`;
+    if(!usedCombos.has(key)||attempts>20){usedCombos.add(key);set=[{...w,cue:'something to wear',category:'wearable'},{...c,cue:'a color',category:'color'},{...f,cue:'a piece of furniture',category:'furniture'}];break}
+    attempts++;
+  }while(true);
+  if(usedCombos.size>500)usedCombos.clear();
+  return set;
+}
+
+// ===== APP STATE =====
+let currentPlayer = null; // key into DB.patients
+let currentWordSet;
+let bimsState = {};
+let gameTimers = {};
+
+function resetBimsState(){
+  currentWordSet=getWordSet();
+  bimsState={immediateRecallScore:0,wordsRepeated:[],yearScore:0,monthScore:0,dayScore:0,yearAnswer:'',monthAnswer:'',dayAnswer:'',recallScores:[0,0,0],recallAnswers:[],totalScore:0,gameType:'',gameScore:0,startTime:new Date(),isCMS:currentWordSet[0].word==='sock'&&currentWordSet[1].word==='blue'&&currentWordSet[2].word==='bed'};
+}
+
+// ===== NAVIGATION =====
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+  if(id==='screen-patient-select')renderPlayerList();
+  if(id==='screen-dashboard')renderDashboard();
+}
+
+function goHome(){
+  Object.values(gameTimers).forEach(t=>clearInterval(t));
+  gameTimers={};
+  document.body.classList.remove('game-active');
+  showScreen('screen-home');
+}
+
+// ===== PATIENT MANAGEMENT =====
+function renderPlayerList(){
+  const container=document.getElementById('knownPlayers');
+  const keys=Object.keys(DB.patients);
+  if(keys.length===0){container.innerHTML='<p style="text-align:center;color:var(--ink-light);font-size:.85rem;font-weight:600;padding:10px">No players yet — add yourself below!</p>';return}
+  container.innerHTML=keys.map(k=>{
+    const p=DB.patients[k];
+    const lastScore=p.scores.length>0?p.scores[p.scores.length-1]:null;
+    const scoreClass=lastScore?(lastScore.bimsTotal>=13?'great':lastScore.bimsTotal>=8?'ok':'concern'):'none';
+    return`<div class="patient-row" onclick="selectPlayer('${k}')">
+      <div class="patient-row-info"><div class="patient-row-name">${p.name}</div><div class="patient-row-meta">${p.patientId?'ID: '+p.patientId+' • ':''}${p.scores.length} game${p.scores.length!==1?'s':''}</div></div>
+      <div class="patient-row-score ${scoreClass}">${lastScore?lastScore.bimsTotal:'—'}</div>
+    </div>`
+  }).join('');
+}
+
+function selectPlayer(key){
+  currentPlayer=key;
+  const p=DB.patients[key];
+  document.getElementById('currentPlayerDisplay').textContent=p.name;
+  showScreen('screen-home');
+}
+
+function addAndSelectPlayer(){
+  const name=document.getElementById('newPlayerName').value.trim();
+  if(!name){document.getElementById('newPlayerName').focus();return}
+  const pid=document.getElementById('newPlayerId').value.trim();
+  const key='p_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
+  DB.patients[key]={name,patientId:pid,scores:[]};
+  saveDB();
+  document.getElementById('newPlayerName').value='';
+  document.getElementById('newPlayerId').value='';
+  selectPlayer(key);
+}
+
+// ===== DASHBOARD =====
+function renderDashboard(){
+  const panel=document.getElementById('dashboardContent');
+  const keys=Object.keys(DB.patients);
+  if(keys.length===0){panel.innerHTML='<h2>📊 Dashboard</h2><p style="text-align:center;color:var(--ink-light);font-weight:600;padding:20px">No data yet. Play some games first!</p>';return}
+
+  let rows='';
+  keys.forEach(k=>{
+    const p=DB.patients[k];
+    if(p.scores.length===0) return;
+    const latest=p.scores[p.scores.length-1];
+    const cls=latest.bimsTotal>=13?'great':latest.bimsTotal>=8?'ok':'concern';
+    const trend=p.scores.length>=2?
+      (latest.bimsTotal>p.scores[p.scores.length-2].bimsTotal?'📈':latest.bimsTotal<p.scores[p.scores.length-2].bimsTotal?'📉':'➡️'):'—';
+    rows+=`<div class="patient-row" onclick="showPatientDetail('${k}')">
+      <div class="patient-row-info">
+        <div class="patient-row-name">${p.name} ${p.patientId?'<span style="font-size:.75rem;color:var(--ink-light)">('+p.patientId+')</span>':''}</div>
+        <div class="patient-row-meta">${p.scores.length} sessions • Last: ${new Date(latest.date).toLocaleDateString()} • Trend: ${trend}</div>
+      </div>
+      <div class="patient-row-score ${cls}">${latest.bimsTotal}</div>
+    </div>`;
+  });
+
+  panel.innerHTML=`<h2>📊 All Patients</h2><p style="text-align:center;color:var(--ink-light);font-size:.85rem;font-weight:600;margin-bottom:12px">Tap a patient to see their history</p><div class="patient-list">${rows||'<p style="text-align:center;color:var(--ink-light);padding:10px">No scores recorded yet</p>'}</div>`;
+}
+
+function showPatientDetail(key){
+  const p=DB.patients[key];
+  if(!p)return;
+  const panel=document.getElementById('dashboardContent');
+  const scores=p.scores.slice(-20); // last 20
+
+  let chartHtml='';
+  if(scores.length>0){
+    chartHtml=`<div class="trend-chart">${scores.map(s=>{
+      const pct=Math.max(8,(s.bimsTotal/15)*100);
+      const cls=s.bimsTotal>=13?'great':s.bimsTotal>=8?'ok':'concern';
+      const d=new Date(s.date);
+      return`<div class="trend-bar-wrap"><div class="trend-score">${s.bimsTotal}</div><div class="trend-bar ${cls}" style="height:${pct}%"></div><div class="trend-date">${(d.getMonth()+1)}/${d.getDate()}</div></div>`;
+    }).join('')}</div>`;
+  }
+
+  let tableRows=scores.slice().reverse().map(s=>{
+    const d=new Date(s.date);
+    const cls=s.bimsTotal>=13?'great':s.bimsTotal>=8?'ok':'concern';
+    return`<tr>
+      <td>${d.toLocaleDateString()}</td>
+      <td>${s.details?.gameType||'—'}</td>
+      <td>${s.details?.ir??'—'}</td><td>${s.details?.orient??'—'}</td><td>${s.details?.recall??'—'}</td>
+      <td><strong style="color:var(--${cls==='great'?'teal':cls==='ok'?'honey':'coral'})">${s.bimsTotal}</strong></td>
+      <td>${s.details?.isCMS?'✅':''}</td>
+    </tr>`;
+  }).join('');
+
+  panel.innerHTML=`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <button class="back-btn" onclick="renderDashboard()" style="flex-shrink:0">←</button>
+      <div><div style="font-weight:800;font-size:1.1rem">${p.name}</div><div style="font-size:.8rem;color:var(--ink-light);font-weight:600">${p.patientId?'ID: '+p.patientId+' • ':''}${p.scores.length} total sessions</div></div>
+    </div>
+    <h3 style="font-size:.9rem;font-weight:800;margin-bottom:4px">📈 Score Trend (last 20)</h3>
+    ${scores.length>0?chartHtml:'<div class="trend-empty">No scores yet</div>'}
+    <div style="margin-top:14px;overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:.78rem">
+        <tr style="background:var(--plum);color:#fff"><th style="padding:6px">Date</th><th>Game</th><th>IR</th><th>Orient</th><th>Recall</th><th>Total</th><th>CMS</th></tr>
+        ${tableRows}
+      </table>
+    </div>
+    <button class="btn-game btn-ghost" style="margin-top:12px" onclick="if(confirm('Delete all data for ${p.name}?')){delete DB.patients['${key}'];saveDB();renderDashboard()}">🗑️ Delete Patient</button>
+  `;
+}
+
+// ===== BONUS ROUND (BIMS) =====
+function showBonus(html){document.getElementById('bonusCard').innerHTML=html;document.getElementById('bonusOverlay').classList.add('active')}
+function closeBonus(){document.getElementById('bonusOverlay').classList.remove('active')}
+
+function showBimsIntro(){
+  const w=currentWordSet;
+  showBonus(`<span class="bonus-emoji">✨</span><h2>Bonus Round!</h2>
+    <p>These <strong>3 special items</strong> appeared in the game! Remember them for bonus points later!</p>
+    <div class="remember-objects">${w.map(x=>`<div class="remember-chip">${x.emoji} ${x.word[0].toUpperCase()+x.word.slice(1)}</div>`).join('')}</div>
+    <p style="font-size:.85rem;color:var(--coral);font-weight:700">Say them out loud: "${w.map(x=>x.word).join(', ')}"</p>
+    <button class="btn-game btn-coral" onclick="showBimsRepeat()">Got it! 🧠</button>`);
+}
+
+function showBimsRepeat(){
+  showBonus(`<span class="bonus-emoji">🗣️</span><h2>Quick — Repeat Them!</h2>
+    <p>Type the 3 special items you just saw for bonus points!</p>
+    <input type="text" class="bonus-input" id="bimsRepeatInput" placeholder="Type the 3 words..." autocomplete="off">
+    <p style="font-size:.78rem;color:var(--ink-light);margin-top:6px">Separate with commas or spaces</p>
+    <button class="btn-game btn-coral" onclick="scoreBimsRepeat()">Check! ✅</button>`);
+  setTimeout(()=>{const e=document.getElementById('bimsRepeatInput');if(e)e.focus()},400);
+}
+
+function scoreBimsRepeat(){
+  const input=document.getElementById('bimsRepeatInput').value.toLowerCase().trim();
+  const typed=input.split(/[\s,;]+/).map(w=>w.trim()).filter(Boolean);
+  let score=0,matched=[];
+  currentWordSet.forEach(w=>{if(typed.includes(w.word)){score++;matched.push(w.word)}});
+  bimsState.immediateRecallScore=score;bimsState.wordsRepeated=matched;bimsState.gameScore+=score*50;
+  const msg=score===3?'Perfect! All 3! 🎉':score>0?`Nice — you got ${score}!`:'No worries!';
+  showBonus(`<span class="bonus-emoji">${score===3?'🎉':'💡'}</span><h2>${msg}</h2>
+    <p>Here they are with hints — remember them for the final bonus!</p>
+    <div class="remember-objects">${currentWordSet.map(w=>`<div class="remember-chip">${w.emoji} ${w.word[0].toUpperCase()+w.word.slice(1)}<br><span style="font-size:.72rem;opacity:.6">${w.cue}</span></div>`).join('')}</div>
+    <p style="font-size:.85rem;color:var(--teal);font-weight:700">+${score*50} bonus points!</p>
+    <button class="btn-game btn-teal" onclick="closeBonus();setTimeout(showBimsOrientation,8000+Math.random()*5000)">Keep Playing! 🎮</button>`);
+}
+
+function showBimsOrientation(){
+  showBonus(`<span class="bonus-emoji">🧩</span><h2>Daily Trivia!</h2><p>Quick brain teasers for extra points!</p>
+    <div style="text-align:left;margin:10px 0">
+      <div style="margin-bottom:12px"><label style="font-weight:800;font-size:.85rem;display:block;margin-bottom:5px">🗓️ What year is it?</label><input type="text" class="bonus-input" id="bimsYear" placeholder="e.g. 2026" inputmode="numeric" autocomplete="off"></div>
+      <div style="margin-bottom:12px"><label style="font-weight:800;font-size:.85rem;display:block;margin-bottom:5px">🌷 What month?</label><select class="bonus-select" id="bimsMonth"><option value="">Pick month...</option>${['January','February','March','April','May','June','July','August','September','October','November','December'].map((m,i)=>`<option value="${i+1}">${m}</option>`).join('')}</select></div>
+      <div><label style="font-weight:800;font-size:.85rem;display:block;margin-bottom:5px">☀️ What day of the week?</label><select class="bonus-select" id="bimsDay"><option value="">Pick day...</option>${['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].map(d=>`<option value="${d}">${d}</option>`).join('')}</select></div>
+    </div>
+    <button class="btn-game btn-plum" onclick="scoreBimsOrientation()">Submit! ⭐</button>`);
+}
+
+function scoreBimsOrientation(){
+  const now=new Date(),ay=now.getFullYear(),am=now.getMonth()+1,ad=now.toLocaleDateString('en-US',{weekday:'long'}),dom=now.getDate();
+  const ey=parseInt(document.getElementById('bimsYear').value);bimsState.yearAnswer=document.getElementById('bimsYear').value;
+  if(!isNaN(ey)){const d=Math.abs(ey-ay);bimsState.yearScore=d===0?3:d===1?2:d<=5?1:0}
+  const em=parseInt(document.getElementById('bimsMonth').value);bimsState.monthAnswer=document.getElementById('bimsMonth').value;
+  if(em){const md=Math.abs(em-am);bimsState.monthScore=em===am?2:md===1?((em===am-1&&dom<=5)||(em===am+1&&dom>=26)?2:1):0}
+  bimsState.dayAnswer=document.getElementById('bimsDay').value;bimsState.dayScore=bimsState.dayAnswer===ad?1:0;
+  const os=bimsState.yearScore+bimsState.monthScore+bimsState.dayScore;bimsState.gameScore+=os*30;
+  showBonus(`<span class="bonus-emoji">🎯</span><h2>+${os*30} Trivia Points!</h2><p>One more bonus round coming!</p>
+    <button class="btn-game btn-honey" onclick="closeBonus();setTimeout(showBimsRecall,10000+Math.random()*8000)">Continue! 🎮</button>`);
+}
+
+function showBimsRecall(){
+  showBonus(`<span class="bonus-emoji">🔮</span><h2>Final Bonus!</h2><p>Remember those 3 special items?</p>
+    <div id="recallBox" style="text-align:left">${currentWordSet.map((w,i)=>`
+      <div style="margin-bottom:12px;padding:10px;background:var(--cream);border-radius:12px" data-ri="${i}">
+        <div style="font-weight:800;font-size:.85rem;margin-bottom:6px">${w.emoji} Item ${i+1}:</div>
+        <div class="bonus-options" id="ro${i}">
+          <button class="bonus-opt-btn" onclick="selR(${i},'free',this)">✅ I remember!</button>
+          <button class="bonus-opt-btn" onclick="selR(${i},'cue',this)">💡 Hint: ${w.cue}</button>
+          <button class="bonus-opt-btn" onclick="selR(${i},'forgot',this)">😅 Can't remember</button>
+        </div>
+        <div id="rt${i}" style="display:none;margin-top:6px"><input type="text" class="bonus-input" placeholder="Type the word..." autocomplete="off"></div>
+      </div>`).join('')}</div>
+    <button class="btn-game btn-coral" onclick="scoreBimsRecall()">Get My Points! 🏆</button>`);
+}
+
+function selR(i,type,btn){
+  document.querySelectorAll(`#ro${i} .bonus-opt-btn`).forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');btn.dataset.type=type;
+  const td=document.getElementById(`rt${i}`);
+  if(type==='free'||type==='cue'){td.style.display='block';const inp=td.querySelector('input');inp.placeholder=type==='cue'?`${currentWordSet[i].cue} — what was it?`:'Type the word...';inp.focus()}
+  else td.style.display='none';
+}
+
+function scoreBimsRecall(){
+  currentWordSet.forEach((w,i)=>{
+    const sel=document.querySelector(`#ro${i} .bonus-opt-btn.selected`);
+    const inp=document.querySelector(`#rt${i} input`);const typed=inp?inp.value.toLowerCase().trim():'';
+    const type=sel?sel.dataset.type:'forgot';
+    if(type==='free'&&typed===w.word){bimsState.recallScores[i]=2;bimsState.recallAnswers[i]={type:'no_cue',typed}}
+    else if(type==='cue'&&typed===w.word){bimsState.recallScores[i]=1;bimsState.recallAnswers[i]={type:'with_cue',typed}}
+    else if((type==='free'||type==='cue')&&typed&&typed!==w.word){bimsState.recallScores[i]=0;bimsState.recallAnswers[i]={type:'incorrect',typed}}
+    else{bimsState.recallScores[i]=0;bimsState.recallAnswers[i]={type:'not_recalled',typed:''}}
+  });
+  bimsState.gameScore+=bimsState.recallScores.reduce((a,b)=>a+b,0)*75;
+  closeBonus();
+  finishGame();
+}
+
+// ===== FINISH & SAVE =====
+function finishGame(){
+  Object.values(gameTimers).forEach(t=>clearInterval(t));
+  const ir=bimsState.immediateRecallScore;
+  const orient=bimsState.yearScore+bimsState.monthScore+bimsState.dayScore;
+  const rc=bimsState.recallScores.reduce((a,b)=>a+b,0);
+  bimsState.totalScore=ir+orient+rc;
+
+  // SAVE to patient record
+  if(currentPlayer&&DB.patients[currentPlayer]){
+    addScore(currentPlayer,{
+      date:new Date().toISOString(),
+      bimsTotal:bimsState.totalScore,
+      details:{
+        ir, orient, recall:rc,
+        gameType:bimsState.gameType,
+        words:currentWordSet.map(w=>w.word),
+        isCMS:bimsState.isCMS,
+        yearScore:bimsState.yearScore, monthScore:bimsState.monthScore, dayScore:bimsState.dayScore,
+        yearAnswer:bimsState.yearAnswer, monthAnswer:bimsState.monthAnswer, dayAnswer:bimsState.dayAnswer,
+        recallScores:bimsState.recallScores,
+        recallAnswers:bimsState.recallAnswers,
+        wordsRepeated:bimsState.wordsRepeated
+      }
+    });
+  }
+
+  // Display results
+  let cat,cls,emo;
+  if(bimsState.totalScore>=13){cat='Blooming Brilliantly!';cls='great';emo='🌸'}
+  else if(bimsState.totalScore>=8){cat='Growing Nicely!';cls='ok';emo='🌱'}
+  else{cat='Keep Growing!';cls='concern';emo='🌻'}
+
+  document.getElementById('resultsEmoji').textContent=emo;
+  document.getElementById('resultsTitle').textContent=cat;
+  document.getElementById('resultsSub').textContent=`Game Score: ${bimsState.gameScore} pts`;
+  document.getElementById('cmsTag').innerHTML=bimsState.isCMS?'<span class="cms-badge">✅ CMS Official</span>':'';
+
+  document.getElementById('resultsContent').innerHTML=`
+    <div class="results-circle ${cls}"><div class="results-number">${bimsState.totalScore}</div><div class="results-of">/ 15</div></div>
+    <div class="results-breakdown">
+      <div class="results-row"><span>🧠 Word Memory</span><span class="results-val">${ir}/3</span></div>
+      <div class="results-row"><span>🧩 Daily Trivia</span><span class="results-val">${orient}/6</span></div>
+      <div class="results-row"><span>🔮 Word Recall</span><span class="results-val">${rc}/6</span></div>
+      <div class="results-row" style="border-top:2px solid var(--ink-faint);padding-top:8px"><span><strong>🌿 Total</strong></span><span class="results-val" style="background:var(--ink);color:#fff">${bimsState.totalScore}/15</span></div>
+    </div>`;
+
+  // Trend chart for this patient
+  const trendSection=document.getElementById('trendSection');
+  if(currentPlayer&&DB.patients[currentPlayer]){
+    const scores=DB.patients[currentPlayer].scores.slice(-12);
+    if(scores.length>1){
+      trendSection.innerHTML=`<h3>📈 Your Recent Scores</h3>
+        <div class="trend-chart">${scores.map(s=>{
+          const pct=Math.max(8,(s.bimsTotal/15)*100);
+          const c=s.bimsTotal>=13?'great':s.bimsTotal>=8?'ok':'concern';
+          const d=new Date(s.date);
+          return`<div class="trend-bar-wrap"><div class="trend-score">${s.bimsTotal}</div><div class="trend-bar ${c}" style="height:${pct}%"></div><div class="trend-date">${(d.getMonth()+1)}/${d.getDate()}</div></div>`;
+        }).join('')}</div>`;
+    } else { trendSection.innerHTML=''; }
+  } else { trendSection.innerHTML=''; }
+
+  // Clinical panel
+  const now=new Date();
+  const fmtR=i=>{const a=bimsState.recallAnswers[i];if(!a)return'—';return{no_cue:`✅ ("${a.typed}")`,with_cue:`💡 ("${a.typed}")`,incorrect:`❌ ("${a.typed}")`,not_recalled:'❌'}[a.type]||'—'};
+  const classif=bimsState.totalScore>=13?'Intact (13-15)':bimsState.totalScore>=8?'Moderate (8-12)':'Severe (0-7)';
+  const pName=currentPlayer?DB.patients[currentPlayer]?.name:'—';
+  const pId=currentPlayer?DB.patients[currentPlayer]?.patientId:'';
+  document.getElementById('clinicalPanel').innerHTML=`
+    <h4 style="font-family:'Cormorant Garamond',serif;margin-bottom:6px">BIMS — MDS 3.0 Section C</h4>
+    <p style="font-size:.75rem;color:var(--ink-light);margin-bottom:6px">
+      Patient: <strong>${pName}</strong>${pId?' ('+pId+')':''} | ${now.toLocaleDateString()} ${now.toLocaleTimeString()}<br>
+      Game: <strong>${bimsState.gameType}</strong> | Words: <strong>${currentWordSet.map(w=>w.word).join(', ')}</strong> | ${bimsState.isCMS?'<strong style="color:var(--teal)">CMS Official</strong>':'Practice'}
+    </p>
+    <table><tr><th>Sec</th><th>Item</th><th>Response</th><th>Pts</th></tr>
+    ${currentWordSet.map((w,i)=>`<tr><td>${i===0?'<b>C0200</b>':''}</td><td>${w.word}</td><td>${bimsState.wordsRepeated.includes(w.word)?'✅':'❌'}</td><td>${bimsState.wordsRepeated.includes(w.word)?1:0}</td></tr>`).join('')}
+    <tr><td><b>C0300</b></td><td>Year (${now.getFullYear()})</td><td>${bimsState.yearAnswer||'—'}</td><td>${bimsState.yearScore}/3</td></tr>
+    <tr><td></td><td>Month</td><td>${bimsState.monthAnswer?new Date(2000,bimsState.monthAnswer-1).toLocaleString('default',{month:'long'}):'—'}</td><td>${bimsState.monthScore}/2</td></tr>
+    <tr><td></td><td>Day</td><td>${bimsState.dayAnswer||'—'}</td><td>${bimsState.dayScore}/1</td></tr>
+    ${currentWordSet.map((w,i)=>`<tr><td>${i===0?'<b>C0400</b>':''}</td><td>${w.word}</td><td>${fmtR(i)}</td><td>${bimsState.recallScores[i]}/2</td></tr>`).join('')}
+    </table>
+    <div style="margin-top:8px;padding:10px;background:#fff;border-radius:8px;border:1px solid rgba(123,94,167,.15)">
+      <strong>C0500 Summary: ${bimsState.totalScore}/15 — ${classif}</strong>
+    </div>`;
+
+  document.getElementById('clinicalPanel').classList.remove('visible');
+  showScreen('screen-results');
+  if(bimsState.totalScore>=13)launchConfetti();
+}
+
+function toggleClinical(){document.getElementById('clinicalPanel').classList.toggle('visible')}
+function printClinical(){document.getElementById('clinicalPanel').classList.add('visible');window.print()}
+
+// ===== UTILITIES =====
+function showFloatScore(x,y,txt,col){const e=document.createElement('div');e.className='float-score';e.textContent=txt;e.style.left=x+'px';e.style.top=y+'px';e.style.color=col||'var(--coral)';document.body.appendChild(e);setTimeout(()=>e.remove(),1000)}
+function startTimer(id,secs,onEnd){let r=secs;const d=document.getElementById(id);const u=()=>{d.textContent=`${Math.floor(r/60)}:${(r%60).toString().padStart(2,'0')}`;if(r<=0){clearInterval(t);if(onEnd)onEnd()}r--};u();const t=setInterval(u,1000);return t}
+function launchConfetti(){const c=document.getElementById('confettiContainer'),cols=['#E8736C','#5B9B8A','#E8B44D','#7B5EA7','#6AABE8','#FF8FA3'];for(let i=0;i<35;i++){const p=document.createElement('div');p.className='confetti-piece';p.style.left=Math.random()*100+'%';p.style.background=cols[Math.floor(Math.random()*cols.length)];p.style.borderRadius=Math.random()>.5?'50%':'2px';p.style.width=(6+Math.random()*8)+'px';p.style.height=(6+Math.random()*8)+'px';p.style.animationDelay=Math.random()*.8+'s';p.style.animationDuration=(1.5+Math.random()*1.5)+'s';c.appendChild(p)}setTimeout(()=>c.innerHTML='',3000)}
+
+// ===== GAME LAUNCHER =====
+function startGame(type){
+  if(!currentPlayer){showScreen('screen-patient-select');return}
+  resetBimsState();
+  bimsState.gameType=type==='bubble'?'Bubble Pop':type==='cards'?'Garden Match':'Tile Garden';
+  document.body.classList.add('game-active');
+  if(type==='bubble')initBubble();else if(type==='cards')initCards();else initMahjong();
+}
+
+// ===== BUBBLE POP =====
+let bS={score:0,level:1,popped:0,phase:0};
+function initBubble(){bS={score:0,level:1,popped:0,phase:0};document.getElementById('bubbleScore').textContent='0';document.getElementById('bubbleLevelLabel').textContent='Level 1';document.getElementById('bubbleLevelFill').style.width='0%';showScreen('screen-bubble');gameTimers.b=startTimer('bubbleTimer',90,()=>{if(bS.phase<3)showBimsRecall()});spawnBubbles()}
+function spawnBubbles(){const a=document.getElementById('bubbleArena');a.innerHTML='';const r=a.getBoundingClientRect(),aW=r.width,aH=r.height;const bE=currentWordSet.map(w=>w.emoji);let pool=[...GAME_EMOJIS.slice(0,9),...bE].sort(()=>Math.random()-.5).slice(0,8+bS.level*2);const sz=Math.min(68,aW/5);pool.forEach((em,i)=>{const b=document.createElement('div');b.className='bubble';const h=Math.random()*360;b.style.background=`radial-gradient(circle at 35% 35%,hsla(${h},80%,95%,.8),hsla(${h},70%,85%,.9))`;b.style.width=b.style.height=sz+'px';b.style.left=(8+Math.random()*(aW-sz-16))+'px';b.style.top=(8+Math.random()*(aH-sz-16))+'px';b.style.animationDelay=(i*.07)+'s';b.innerHTML=`<div class="bubble-shine"></div><div class="bubble-inner">${em}</div>`;const pop=e=>{e.preventDefault();if(b.classList.contains('popping'))return;b.classList.add('popping');bS.popped++;bS.score+=10;document.getElementById('bubbleScore').textContent=bS.score;const br2=b.getBoundingClientRect();showFloatScore(br2.left+br2.width/2,br2.top,'+10','var(--coral)');for(let j=0;j<5;j++){const p=document.createElement('div');p.className='pop-particle';p.style.left=(parseFloat(b.style.left)+sz/2)+'px';p.style.top=(parseFloat(b.style.top)+sz/2)+'px';p.style.background=`hsl(${Math.random()*360},70%,70%)`;p.style.setProperty('--tx',(Math.random()*60-30)+'px');p.style.setProperty('--ty',(Math.random()*60-30)+'px');a.appendChild(p);setTimeout(()=>p.remove(),500)}setTimeout(()=>b.remove(),300);const lt=6+bS.level*3;document.getElementById('bubbleLevelFill').style.width=Math.min(100,bS.popped/lt*100)+'%';if(bS.popped===8&&bS.phase===0){bS.phase=1;setTimeout(showBimsIntro,500)}else if(bS.popped>=lt){bS.level++;bS.popped=0;document.getElementById('bubbleLevelLabel').textContent='Level '+bS.level;document.getElementById('bubbleLevelFill').style.width='0%';spawnBubbles()}if(a.querySelectorAll('.bubble:not(.popping)').length<=1&&bS.phase!==1)spawnBubbles()};b.addEventListener('click',pop);b.addEventListener('touchstart',pop,{passive:false});a.appendChild(b)})}
+
+// ===== CARD MATCH =====
+let cS={score:0,level:1,flipped:[],matches:0,total:0,phase:0,locked:false};
+function initCards(){cS={score:0,level:1,flipped:[],matches:0,total:0,phase:0,locked:false};document.getElementById('cardScore').textContent='0';document.getElementById('cardLevelLabel').textContent='Level 1';document.getElementById('cardLevelFill').style.width='0%';showScreen('screen-cards');gameTimers.c=startTimer('cardTimer',120,()=>{if(cS.phase<3)showBimsRecall()});buildCards()}
+function buildCards(){const g=document.getElementById('cardGrid');g.innerHTML='';const bE=currentWordSet.map(w=>w.emoji);let pool=[...GAME_EMOJIS.slice(0,5),...bE].sort(()=>Math.random()-.5).slice(0,8);let cards=[...pool,...pool].sort(()=>Math.random()-.5);cS.total=8;cards.forEach((em)=>{const c=document.createElement('div');c.className='match-card';c.dataset.emoji=em;c.innerHTML=`<div class="match-card-inner"><div class="match-card-face match-card-back"></div><div class="match-card-face match-card-front">${em}</div></div>`;c.addEventListener('click',()=>{if(cS.locked||c.classList.contains('flipped')||c.classList.contains('matched'))return;c.classList.add('flipped');cS.flipped.push(c);if(cS.flipped.length===2){cS.locked=true;const[a,b]=cS.flipped;if(a.dataset.emoji===b.dataset.emoji){setTimeout(()=>{a.classList.add('matched');b.classList.add('matched');cS.matches++;cS.score+=25;document.getElementById('cardScore').textContent=cS.score;showFloatScore(b.getBoundingClientRect().left+30,b.getBoundingClientRect().top,'+25','var(--teal)');document.getElementById('cardLevelFill').style.width=(cS.matches/cS.total*100)+'%';cS.flipped=[];cS.locked=false;if(cS.matches===3&&cS.phase===0){cS.phase=1;setTimeout(showBimsIntro,400)}if(cS.matches>=cS.total){cS.level++;document.getElementById('cardLevelLabel').textContent='Level '+cS.level;document.getElementById('cardLevelFill').style.width='0%';cS.matches=0;setTimeout(buildCards,600)}},400)}else{setTimeout(()=>{a.classList.remove('flipped');b.classList.remove('flipped');cS.flipped=[];cS.locked=false},800)}}});g.appendChild(c)})}
+
+// ===== MAHJONG =====
+let mS={score:0,level:1,sel:null,matches:0,total:0,phase:0};
+function initMahjong(){mS={score:0,level:1,sel:null,matches:0,total:0,phase:0};document.getElementById('mahScore').textContent='0';document.getElementById('mahLevelLabel').textContent='Level 1';document.getElementById('mahLevelFill').style.width='0%';showScreen('screen-mahjong');gameTimers.m=startTimer('mahTimer',120,()=>{if(mS.phase<3)showBimsRecall()});buildMah()}
+function buildMah(){const g=document.getElementById('mahGrid');g.innerHTML='';const bE=currentWordSet.map(w=>w.emoji);let pool=[...GAME_EMOJIS.slice(0,15),...bE].sort(()=>Math.random()-.5).slice(0,18);let tiles=[...pool,...pool].sort(()=>Math.random()-.5);mS.total=18;tiles.forEach((em)=>{const t=document.createElement('div');t.className='mah-tile';t.dataset.emoji=em;t.textContent=em;t.addEventListener('click',()=>{if(t.classList.contains('matched-out'))return;if(!mS.sel){t.classList.add('selected');mS.sel=t}else if(mS.sel===t){t.classList.remove('selected');mS.sel=null}else{if(mS.sel.dataset.emoji===t.dataset.emoji){const a=mS.sel;t.classList.add('selected');setTimeout(()=>{a.classList.remove('selected');a.classList.add('matched-out');t.classList.remove('selected');t.classList.add('matched-out');mS.matches++;mS.score+=20;document.getElementById('mahScore').textContent=mS.score;showFloatScore(t.getBoundingClientRect().left+20,t.getBoundingClientRect().top,'+20','var(--plum)');document.getElementById('mahLevelFill').style.width=(mS.matches/mS.total*100)+'%';if(mS.matches===4&&mS.phase===0){mS.phase=1;setTimeout(showBimsIntro,400)}if(mS.matches>=mS.total){mS.level++;document.getElementById('mahLevelLabel').textContent='Level '+mS.level;document.getElementById('mahLevelFill').style.width='0%';mS.matches=0;setTimeout(buildMah,600)}},200)}else{t.classList.add('selected');setTimeout(()=>{mS.sel?.classList.remove('selected');t.classList.remove('selected')},400)}mS.sel=null}});g.appendChild(t)})}
+
+// ===== INIT =====
+(async function(){await loadDB();renderPlayerList()})();
+</script>
+</body>
+</html>
